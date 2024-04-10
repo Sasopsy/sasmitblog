@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="noindex, nofollow">
+<title>Variational Autoencoders | Sasmit&#39;s Blog</title>
+<meta name="keywords" content="">
+<meta name="description" content="Introduction An auto-encoder learns an efficient representation of data. It &ldquo;compresses&rdquo; said data into lower dimensional vector and also learns to reconstruct it from said vector called latent vector.
+In variational auto-encoders, apart from also learning to re-construct from the compressed vector, it also learns a mapping to an underlying &ldquo;latent space&rdquo;. This mapping can then help us to generate new variations of the data.
+Problem Statement Fig 1. Directed Graphical Model $\mathbf{z}$ is a continuous random variable sampled from some prior distribution \(p_\theta(\mathbf{z})\).">
+<meta name="author" content="Sasmit Datta">
+<link rel="canonical" href="http://localhost:1313/posts/vae/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.b609c58d5c11bb90b1a54e04005d74ad1ddf22165eb79f5533967e57df9c3b50.css" integrity="sha256-tgnFjVwRu5CxpU4EAF10rR3fIhZet59VM5Z&#43;V9&#43;cO1A=" rel="preload stylesheet" as="style">
+<link rel="icon" href="http://localhost:1313/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="http://localhost:1313/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="http://localhost:1313/favicon-32x32.png">
+<link rel="apple-touch-icon" href="http://localhost:1313/apple-touch-icon.png">
+<link rel="mask-icon" href="http://localhost:1313/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<link rel="alternate" hreflang="en" href="http://localhost:1313/posts/vae/">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --code-block-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript>
+    
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" crossorigin="anonymous"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    renderMathInElement(document.body, {
+      delimiters: [
+        {left: '\\[', right: '\\]', display: true},   
+        {left: '$$', right: '$$', display: true},     
+        {left: '\\(', right: '\\)', display: false},  
+        {left: '$', right: '$', display: false}
+      ],
+      throwOnError : false
+    });
+  });
+</script>
+    
+</head>
+
+<body class="" id="top">
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.body.classList.add('dark');
+    } else if (localStorage.getItem("pref-theme") === "light") {
+        document.body.classList.remove('dark')
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="http://localhost:1313/" accesskey="h" title="Sasmit&#39;s Blog (Alt + H)">Sasmit&#39;s Blog</a>
+            <div class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <ul id="menu">
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    
+    <h1 class="post-title entry-hint-parent">
+      Variational Autoencoders
+    </h1>
+    <div class="post-meta"><span title='2024-04-10 23:41:23 +0530 IST'>April 10, 2024</span>&nbsp;·&nbsp;5 min&nbsp;·&nbsp;Sasmit Datta
+
+</div>
+  </header> <div class="toc">
+    <details >
+        <summary accesskey="c" title="(Alt + C)">
+            <span class="details">Table of Contents</span>
+        </summary>
+
+        <div class="inner"><ul>
+                <li>
+                    <a href="#introduction" aria-label="Introduction">Introduction</a></li>
+                <li>
+                    <a href="#problem-statement" aria-label="Problem Statement">Problem Statement</a><ul>
+                        <ul>
+                        
+                <li>
+                    <a href="#our-goal" aria-label="Our Goal">Our Goal</a></li></ul>
+                    </ul>
+                </li>
+                <li>
+                    <a href="#variational-inference" aria-label="Variational Inference">Variational Inference</a><ul>
+                        
+                <li>
+                    <a href="#elbo-as-loss-function" aria-label="ELBO as Loss Function">ELBO as Loss Function</a></li>
+                <li>
+                    <a href="#why" aria-label="Why?">Why?</a></li></ul>
+                </li>
+                <li>
+                    <a href="#re-parametrisation-trick" aria-label="Re-Parametrisation Trick">Re-Parametrisation Trick</a><ul>
+                        
+                <li>
+                    <a href="#law-of-the-unconscious-statistician" aria-label="Law of the Unconscious Statistician">Law of the Unconscious Statistician</a></li>
+                <li>
+                    <a href="#re-parametrisation" aria-label="Re-Parametrisation">Re-Parametrisation</a></li></ul>
+                </li>
+                <li>
+                    <a href="#variational-auto-encoder" aria-label="Variational Auto-encoder">Variational Auto-encoder</a><ul>
+                        
+                <li>
+                    <a href="#loss" aria-label="Loss">Loss</a><ul>
+                        
+                <li>
+                    <a href="#computing-the-kl-divergence" aria-label="Computing the KL-Divergence">Computing the KL-Divergence</a></li>
+                <li>
+                    <a href="#final-loss" aria-label="Final Loss">Final Loss</a></li></ul>
+                </li></ul>
+                </li>
+                <li>
+                    <a href="#implementation" aria-label="Implementation">Implementation</a></li>
+                <li>
+                    <a href="#references" aria-label="References">References</a>
+                </li>
+            </ul>
+        </div>
+    </details>
+</div>
+
+  <div class="post-content"><h1 id="introduction">Introduction<a hidden class="anchor" aria-hidden="true" href="#introduction">#</a></h1>
+<p>An auto-encoder learns an efficient representation of data. It &ldquo;compresses&rdquo; said data into lower dimensional vector and also learns to reconstruct it from said vector called latent vector.</p>
+<p>In variational auto-encoders, apart from also learning to re-construct from the compressed vector, it also learns a mapping to an underlying &ldquo;latent space&rdquo;. This mapping can then help us to generate new variations of the data.</p>
+<h1 id="problem-statement">Problem Statement<a hidden class="anchor" aria-hidden="true" href="#problem-statement">#</a></h1>
+<p><figure style="text-align: center;">
+    <img src="image.png" alt="Directed Graphical Model" style="margin: 0 auto; display: block;">
+    
+    <figcaption>Fig 1. Directed Graphical Model</figcaption>
+    
+</figure>
+
+$\mathbf{z}$ is a continuous random variable sampled from some prior distribution \(p_\theta(\mathbf{z})\).</p>
+<ul>
+<li>A data point $\mathbf{x}^{(i)}$ is generated from conditional distribution $p_\theta(\mathbf{x}|\mathbf{z})$.</li>
+<li>Therefore, $p_\theta(\mathbf{x}|\mathbf{z})$ acts as a decoder distribution with $\theta$ as its parameters.</li>
+<li>And $p_\theta(\mathbf{z}|\mathbf{x})$ is the encoder distribution.</li>
+</ul>
+<h3 id="our-goal">Our Goal<a hidden class="anchor" aria-hidden="true" href="#our-goal">#</a></h3>
+<p>It is maximise the likelihood: $p_\theta(\mathbf{x})$, i.e parameters $\theta$ are good at generating data data resembling $\mathbf{x}$. This gives rise to a plethora of problems.</p>
+<ul>
+<li>$p_\theta(\mathbf{x})= \int_{\mathbf{z}}p_\theta(\mathbf{x},\mathbf{z})d\mathbf{z}= \int_{\mathbf{z}}p_\theta(\mathbf{z})p_\theta(\mathbf{x}|\mathbf{z})d\mathbf{z}$ is intractable, meaning it may be theoretically possible to solve the integral but in practical sense, it takes too much time or resources to be useful.</li>
+</ul>
+<p><strong>Example:</strong></p>
+<ul>
+<li>$\mathbf{z}\in\mathbb{R}^n$ for which the integral can expand to $\int_{z_1}\int_{z_2}&hellip;\int_{z_n}p_\theta(\mathbf{x},\mathbf{z})dz_1dz_2&hellip;dz_n$</li>
+<li>This integral become quite hard to solve when $\mathbf{z}$ has 100&rsquo;s of dimensions.</li>
+</ul>
+<p>Another way to compute $p_\theta(\mathbf{x})$ is through the posterior $p_\theta(\mathbf{z}|\mathbf{x})$, but that too requires we know $p_\theta(\mathbf{x})$. From Bayes theorem:
+</p>
+$$p_\theta(\mathbf{z}|\mathbf{x})=\frac{p_\theta(\mathbf{z})p_\theta(\mathbf{x}|\mathbf{z})}{p_\theta(\mathbf{x})} \tag{1}$$
+<p>
+So instead of trying to find the true posterior, we find some surrogate or approximate posterior ~ $q_\phi(\mathbf{z}|\mathbf{x})$.</p>
+<p>$q_\phi(\mathbf{z}|\mathbf{x})$ acts a decoder distribution with $\phi$ as its parameters.</p>
+<h1 id="variational-inference">Variational Inference<a hidden class="anchor" aria-hidden="true" href="#variational-inference">#</a></h1>
+<p>Method used in statistics to estimate the posterior of a model by considering a surrogate posterior ~ $q_\phi(\mathbf{z}|\mathbf{x})$.</p>
+<h2 id="elbo-as-loss-function">ELBO as Loss Function<a hidden class="anchor" aria-hidden="true" href="#elbo-as-loss-function">#</a></h2>
+<p>Value we want to maximise:
+</p>
+$$p_\theta(\mathbf{x})$$
+<p>
+Which is similar to maximising:
+</p>
+$$\log p_\theta(\mathbf{x})$$
+<p>
+Hence we can perform some mathematics on this log-likelihood:</p>
+$$
+\begin{aligned} 
+\log p_\theta(\mathbf{x})&=\log p_\theta(\mathbf{x})\\
+&= \log p_\theta(\mathbf{x}) \cdot \int q_\phi(\mathbf{z}|\mathbf{x})d\mathbf{z} \\
+&= \int\log p_\theta(\mathbf{x})q_\phi(\mathbf{z}|\mathbf{x})d\mathbf{z}\\
+&= \mathbb{E}_{q_\phi(\mathbf{z}|\mathbf{x})}[\log p_\theta(\mathbf{x})]\\
+&= \mathbb{E}_{q_\phi(\mathbf{z}|\mathbf{x})} \left[\log\frac{p_\theta(\mathbf{z})p_\theta(\mathbf{x}|\mathbf{z})}{p_\theta(\mathbf{z}|\mathbf{x})} \right]\\
+&=\mathbb{E}_{q_\phi(\mathbf{z}|\mathbf{x})} \left[\log \frac{p_\theta(\mathbf{x},\mathbf{z})q_\phi(\mathbf{z}|\mathbf{x})}{p_\theta(\mathbf{z}|\mathbf{x})q_\phi(\mathbf{z}|\mathbf{x})}\right]\\
+&=\mathbb{E}_{q_\phi(\mathbf{z}|\mathbf{x})} \left[\log\frac{p_\theta(\mathbf{x},\mathbf{z})}{q_\phi(\mathbf{z}|\mathbf{x})} \right] +
+\mathbb{E}_{q_\phi(\mathbf{z}|\mathbf{x})}\left[\log\frac{q_\phi(\mathbf{z}|\mathbf{x})}{p_\theta(\mathbf{z}|\mathbf{x})} \right] \\
+&=\mathbb{E}_{q_\phi(\mathbf{z}|\mathbf{x})} \left[\log\frac{p_\theta(\mathbf{x},\mathbf{z})}{q_\phi(\mathbf{z}|\mathbf{x})} \right] + D_{KL}\left(q_\phi(\mathbf{z}|\mathbf{x}) || p_\theta(\mathbf{z}|\mathbf{x})\right)
+\end{aligned}
+$$
+<p>Therefore:</p>
+$$
+\log p_\theta(\mathbf{x}) = \mathbb{E}_{q_\phi(\mathbf{z}|\mathbf{x})} \left[ \log\frac{p_\theta(\mathbf{x}, \mathbf{z})}{q_\phi(\mathbf{z}|\mathbf{x})} \right] + D_{\text{KL}}\left(q_\phi(\mathbf{z}|\mathbf{x}) \| p_\theta(\mathbf{z}|\mathbf{x})\right) \tag{2}
+$$
+<p>Rearranging the above equation,
+</p>
+$$\mathbb{E}_{q_\phi(\mathbf{z}|\mathbf{x})} \left[\log\frac{p_\theta(\mathbf{x},\mathbf{z})}{q_\phi(\mathbf{z}|\mathbf{x})} \right] = 
+\log p_\theta(\mathbf{x}) - 
+D_{KL}\left(q_\phi(\mathbf{z}|\mathbf{x}) || p_\theta(\mathbf{z}|\mathbf{x})\right) \tag{3}$$
+<p>
+The term \(\mathbb{E}_{q_\phi(\mathbf{z}|\mathbf{x})}\left[\log\frac{p_\theta(\mathbf{x},\mathbf{z})}{q_\phi(\mathbf{z}|\mathbf{x})}\right]\) is called the <strong>Evidence Lower Bound</strong> or <strong>ELBO</strong>. So, maximising this term with respect to parameters $\theta$ and $\phi$</p>
+<ul>
+<li><strong>maximises</strong> $\log p_\theta(\mathbf{x})$,</li>
+<li>and <strong>minimises</strong> $D_{KL}\left(q_\phi(\mathbf{z}|\mathbf{x}) || p_\theta(\mathbf{z}|\mathbf{x})\right)$, the KL-Divergence between the surrogate and true posterior.</li>
+</ul>
+<p>Observing the ELBO further:
+</p>
+$$\mathbb{E}_{q_\phi(\mathbf{z}|\mathbf{x})} \left[\log\frac{p_\theta(\mathbf{x},\mathbf{z})}{q_\phi(\mathbf{z}|\mathbf{x})} \right] = \mathbb{E}_{q_\phi(\mathbf{z}|\mathbf{x})}\left[\log\frac{p_\theta(\mathbf{z})p_\theta(\mathbf{x}|\mathbf{z})}{q_\phi(\mathbf{z}|\mathbf{x})} \right]$$
+<p>
+Therefore after breaking up the log values we get,
+</p>
+$$\mathbb{E}_{q_\phi(\mathbf{z}|\mathbf{x})}\left[p_\theta(\mathbf{x}|\mathbf{z})\right]+ \mathbb{E}_{q_\phi(\mathbf{z}|\mathbf{x})}\left[\log\frac{p_\theta(\mathbf{z})}{q_\phi(\mathbf{z}|\mathbf{x})} \right]
+\tag{4}
+$$
+<p>The right term in the above expression is just the negative of the KL-divergence between $p_\theta(\mathbf{z})$ and $q_\phi(\mathbf{z}|\mathbf{x})$. Therefore our loss function comes out to be:
+</p>
+$$\mathcal{L}(\theta,\phi,\mathbf{x}) = 
+\mathbb{E}_{q_\phi(\mathbf{z}|\mathbf{x})}\left[p_\theta(\mathbf{x}|\mathbf{z})\right] -
+D_{KL}\left(q_\phi(\mathbf{z}|\mathbf{x}) || p_\theta(\mathbf{z})\right) \tag{5}$$
+<p>
+The <strong>problem</strong> with this loss function is that we can&rsquo;t run back-propagation through it.</p>
+<h2 id="why">Why?<a hidden class="anchor" aria-hidden="true" href="#why">#</a></h2>
+<p>According to the Leibniz-Integral rule:
+</p>
+$$\frac{d}{dt}\int_a^bf(x,t)dx=\int_a^b\frac{\partial}{\partial t}f(x,t)dx \tag{i}$$
+<p>
+Hence, we can calculate the $\nabla_\theta\mathcal{L}$ by taking the gradient operator inside the expectation but can&rsquo;t do the same for $\nabla_\phi\mathcal{L}$ as</p>
+<ul>
+<li>Support of the integral ($x$ for $(\text{i})$) is $q_\phi(\mathbf{z}|\mathbf{x})$ in our case,</li>
+<li>is not a function of $\theta$.</li>
+<li>But is a function of $\phi$.</li>
+</ul>
+<h1 id="re-parametrisation-trick">Re-Parametrisation Trick<a hidden class="anchor" aria-hidden="true" href="#re-parametrisation-trick">#</a></h1>
+<h2 id="law-of-the-unconscious-statistician">Law of the Unconscious Statistician<a hidden class="anchor" aria-hidden="true" href="#law-of-the-unconscious-statistician">#</a></h2>
+<p>Given a random variable $X$, its expectation can be calculated as:
+</p>
+$$\mathbb{E}_{p(x)}[X]=\int_xx\cdot p(x)dx$$
+<p>
+So given a transformation $f(.)$,
+</p>
+$$Y=f(X)$$
+<p>
+we want to calculate the expectation of $Y$, which is
+</p>
+$$\mathbb{E}_{g(y)}[Y]=\mathbb{E}_{p(x)}[f(X)]=\int_xf(x)\cdot p(x)dx$$
+<h2 id="re-parametrisation">Re-Parametrisation<a hidden class="anchor" aria-hidden="true" href="#re-parametrisation">#</a></h2>
+<p>$\mathbf{z}$ is set to be a deterministic function $\mathbf{z}=g_\phi(\mathbf{x},\epsilon)$, where</p>
+<ul>
+<li>$\mathbf{x}$ is a data-point,</li>
+<li>$\epsilon$ is random variable $\epsilon \sim p(\epsilon)$,</li>
+<li>$\phi$ is the set of parameters of the model.</li>
+</ul>
+<p>Therefore we can rewrite $(4)$ as
+</p>
+$$\mathbb{E}_{p(\epsilon)}\left[p_\theta(\mathbf{x}|g_\phi(\mathbf{x},\epsilon)\right]+
+\mathbb{E}_{p(\epsilon)}\left[\log\frac{p_\theta(g_\phi(\mathbf{x},\epsilon))}{q_\phi(g_\phi(\mathbf{x},\epsilon)|\mathbf{x})} \right]
+\tag{6}$$
+<h1 id="variational-auto-encoder">Variational Auto-encoder<a hidden class="anchor" aria-hidden="true" href="#variational-auto-encoder">#</a></h1>
+<p>Framework for an autoencoder in the paper:</p>
+<ul>
+<li>Prior over latent variables, $p_\theta(\mathbf{z})$ be multivariate isotropic gaussian - $\mathcal{N}(\mathbf{z};\mathbf{0},\mathbf{I})$.</li>
+<li>Let $p_\theta(\mathbf{x}|\mathbf{z})$ be a multivariate gaussian (in-case of real value data) or Bernoulli (in case of binary data).</li>
+<li>Let the intractable but true posterior be approximate gaussian with an approximate diagonal covariance:
+$$\log q_\phi(\mathbf{z}|\mathbf{x})=\log \mathcal{N}(\mathbf{z};\boldsymbol{\mu};\boldsymbol{\sigma}^2\mathbf{I})$$
+where $\boldsymbol{\sigma}$ and $\boldsymbol{\mu}$ will be calculated by the encoder network.</li>
+</ul>
+<p>Therefore, we sample the posterior $\mathbf{z}\sim q_\phi(\mathbf{z}|\mathbf{x})$ using
+</p>
+$$\mathbf{z}=g_\phi(\mathbf{x},\epsilon)=\boldsymbol{\sigma}\odot\epsilon + \boldsymbol{\mu}$$
+<p> where $\epsilon \sim \mathcal{N}(\mathbf{0},\mathbf{I})$.</p>
+<h2 id="loss">Loss<a hidden class="anchor" aria-hidden="true" href="#loss">#</a></h2>
+<h3 id="computing-the-kl-divergence">Computing the KL-Divergence<a hidden class="anchor" aria-hidden="true" href="#computing-the-kl-divergence">#</a></h3>
+<p>Now from eq $(5)$, we compute the KL-divergence between the posterior and the prior. So equation for multivariate gaussian:
+</p>
+$$\mathcal{N}(\mathbf{x};\boldsymbol{\mu},\boldsymbol{\Sigma})=
+\frac{1}{2^{n/2} |\boldsymbol{\Sigma}|}\exp \left(
+-\frac{1}{2} (\mathbf{x}-\boldsymbol{\mu})^{\intercal}  \boldsymbol{\Sigma}^{-1}(\mathbf{x}-\boldsymbol{\mu})
+\right)$$
+<p>
+where $\mathbf{x},\boldsymbol{\mu}\in\mathbb{R}^n$ and $\boldsymbol{\Sigma}\in\mathbb{R}^{n\times n}$.</p>
+<p>So,</p>
+<ul>
+<li>$p_1 = q_\phi(\mathbf{z}|\mathbf{x}) = \mathcal{N}(\boldsymbol{\mu}_1,\boldsymbol{\Sigma}_1) = \mathcal{N}(\boldsymbol{\mu},\boldsymbol{\sigma}^2)$</li>
+<li>$p_2 = p_\theta(\mathbf{z}) =\mathcal{N}(\boldsymbol{\mu}_2,\boldsymbol{\Sigma}_2) =\mathcal{N}(\mathbf{0},\mathbf{I})$</li>
+</ul>
+<p>Now the KL divergence:
+</p>
+$$\begin{aligned}
+D_{KL}\left(q_\phi(\mathbf{z}|\mathbf{x}) || p_\theta(\mathbf{z})\right) & = \frac{1}{2}
+\left[
+\log\frac{|\boldsymbol{\Sigma}_2|}{|\boldsymbol{\Sigma}_1|}-n+\text{tr}(\boldsymbol{\Sigma}_2^{-1}\boldsymbol{\Sigma}_1) + 
+(\boldsymbol{\mu}_2-\boldsymbol{\mu}_1)^{\intercal}  \boldsymbol{\Sigma}^{-1}_2(\boldsymbol{\mu}_2-\boldsymbol{\mu}_1)
+\right]\\
+& = \frac{1}{2}
+\left[
+\log\frac{|\boldsymbol{\Sigma}_2|}{|\boldsymbol{\Sigma}_1|}-n+
+\text{tr}(\mathbf{I}^{-1}\boldsymbol{\sigma}^2) + 
+(\mathbf{0}-\boldsymbol{\mu})^{\intercal}  \boldsymbol{\Sigma}^{-1}_2(\mathbf{0}-\boldsymbol{\mu})
+\right]\\
+& = \frac{1}{2}
+\left[
+\log\frac{1}{|\boldsymbol{\sigma}^2|}-n+
+\text{tr}(\mathbf{I}^{-1}\boldsymbol{\sigma}^2) +  
+(\mathbf{0}-\boldsymbol{\mu}^{\intercal}\mathbf{I}^{-1})(\mathbf{0}-\boldsymbol{\mu})
+\right]\\
+& = \frac{1}{2}
+\left[
+-\log|\boldsymbol{\sigma}^2|-n+
+\text{tr}(\boldsymbol{\sigma}^2) + \boldsymbol{\mu}^{\intercal}\boldsymbol{\mu}
+\right]\\
+& = \frac{1}{2}
+\left[
+-\sum_{j}(\log\sigma^2_j+1)+
+\sum_j\sigma_j^2 + \sum_j\mu_j^2
+\right]\\
+\end{aligned}
+$$
+<h3 id="final-loss">Final Loss<a hidden class="anchor" aria-hidden="true" href="#final-loss">#</a></h3>
+<p>Therefore our final loss can be written as:
+</p>
+$$\mathcal{L}=\mathbb{E}_{q_\phi(\mathbf{z}|\mathbf{x})}\left[p_\theta(\mathbf{x}|\mathbf{z})\right]-\frac{1}{2}
+\left[
+\sum_{j}(\log\sigma^2_j+1)-
+\sum_j\sigma_j^2 - \sum_j\mu_j^2
+\right]$$
+<p>
+where, \(\mathbb{E}_{q_\phi(\mathbf{z}|\mathbf{x})}\left[p_\theta(\mathbf{x}|\mathbf{z})\right]\) is the reconstruction loss. There many options we can consider as reconstruction loss depending on scenario - MSE, MAE, BCE losses.</p>
+<h1 id="implementation">Implementation<a hidden class="anchor" aria-hidden="true" href="#implementation">#</a></h1>
+<p>You can find an implementation of VAEs (with $\mathcal{N}(1,2)$ prior) trained on various loss functions in this <a href="https://github.com/Sasopsy/SAiDL-2024-Assignment/tree/master/VAEs">repository</a>. The derivation of the KL-divergence with $\mathcal{N}(1,2)$ as prior and various findings using different VAE configurations can be found in this <a href="https://github.com/Sasopsy/SAiDL-2024-Assignment/blob/master/VAEs/report/report.pdf">report</a>.</p>
+<h1 id="references">References<a hidden class="anchor" aria-hidden="true" href="#references">#</a></h1>
+<ul>
+<li><a href="https://www.youtube.com/watch?v=iwEzwTTalbg&amp;t=953s">Umar Jamil&rsquo;s VAE Video</a></li>
+<li><a href="https://www.youtube.com/watch?v=nKM9875PVtU">Kapil Sachdeva&rsquo;s Reparametrisation Trick Video</a></li>
+<li><a href="https://arxiv.org/abs/1312.6114">Auto-encoding Variational Bayes</a></li>
+</ul>
+
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+    </ul>
+
+<ul class="share-buttons">
+    <li>
+        <a target="_blank" rel="noopener noreferrer" aria-label="share Variational Autoencoders on x"
+            href="https://x.com/intent/tweet/?text=Variational%20Autoencoders&amp;url=http%3a%2f%2flocalhost%3a1313%2fposts%2fvae%2f&amp;hashtags=">
+            <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve" height="30px" width="30px" fill="currentColor">
+                <path
+                    d="M512 62.554 L 512 449.446 C 512 483.97 483.97 512 449.446 512 L 62.554 512 C 28.03 512 0 483.97 0 449.446 L 0 62.554 C 0 28.03 28.029 0 62.554 0 L 449.446 0 C 483.971 0 512 28.03 512 62.554 Z M 269.951 190.75 L 182.567 75.216 L 56 75.216 L 207.216 272.95 L 63.9 436.783 L 125.266 436.783 L 235.9 310.383 L 332.567 436.783 L 456 436.783 L 298.367 228.367 L 432.367 75.216 L 371.033 75.216 Z M 127.633 110 L 164.101 110 L 383.481 400.065 L 349.5 400.065 Z" />
+            </svg>
+        </a>
+    </li>
+    <li>
+        <a target="_blank" rel="noopener noreferrer" aria-label="share Variational Autoencoders on linkedin"
+            href="https://www.linkedin.com/shareArticle?mini=true&amp;url=http%3a%2f%2flocalhost%3a1313%2fposts%2fvae%2f&amp;title=Variational%20Autoencoders&amp;summary=Variational%20Autoencoders&amp;source=http%3a%2f%2flocalhost%3a1313%2fposts%2fvae%2f">
+            <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve" height="30px" width="30px" fill="currentColor">
+                <path
+                    d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-288.985,423.278l0,-225.717l-75.04,0l0,225.717l75.04,0Zm270.539,0l0,-129.439c0,-69.333 -37.018,-101.586 -86.381,-101.586c-39.804,0 -57.634,21.891 -67.617,37.266l0,-31.958l-75.021,0c0.995,21.181 0,225.717 0,225.717l75.02,0l0,-126.056c0,-6.748 0.486,-13.492 2.474,-18.315c5.414,-13.475 17.767,-27.434 38.494,-27.434c27.135,0 38.007,20.707 38.007,51.037l0,120.768l75.024,0Zm-307.552,-334.556c-25.674,0 -42.448,16.879 -42.448,39.002c0,21.658 16.264,39.002 41.455,39.002l0.484,0c26.165,0 42.452,-17.344 42.452,-39.002c-0.485,-22.092 -16.241,-38.954 -41.943,-39.002Z" />
+            </svg>
+        </a>
+    </li>
+    <li>
+        <a target="_blank" rel="noopener noreferrer" aria-label="share Variational Autoencoders on reddit"
+            href="https://reddit.com/submit?url=http%3a%2f%2flocalhost%3a1313%2fposts%2fvae%2f&title=Variational%20Autoencoders">
+            <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve" height="30px" width="30px" fill="currentColor">
+                <path
+                    d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-3.446,265.638c0,-22.964 -18.616,-41.58 -41.58,-41.58c-11.211,0 -21.361,4.457 -28.841,11.666c-28.424,-20.508 -67.586,-33.757 -111.204,-35.278l18.941,-89.121l61.884,13.157c0.756,15.734 13.642,28.29 29.56,28.29c16.407,0 29.706,-13.299 29.706,-29.701c0,-16.403 -13.299,-29.702 -29.706,-29.702c-11.666,0 -21.657,6.792 -26.515,16.578l-69.105,-14.69c-1.922,-0.418 -3.939,-0.042 -5.585,1.036c-1.658,1.073 -2.811,2.761 -3.224,4.686l-21.152,99.438c-44.258,1.228 -84.046,14.494 -112.837,35.232c-7.468,-7.164 -17.589,-11.591 -28.757,-11.591c-22.965,0 -41.585,18.616 -41.585,41.58c0,16.896 10.095,31.41 24.568,37.918c-0.639,4.135 -0.99,8.328 -0.99,12.576c0,63.977 74.469,115.836 166.33,115.836c91.861,0 166.334,-51.859 166.334,-115.836c0,-4.218 -0.347,-8.387 -0.977,-12.493c14.564,-6.47 24.735,-21.034 24.735,-38.001Zm-119.474,108.193c-20.27,20.241 -59.115,21.816 -70.534,21.816c-11.428,0 -50.277,-1.575 -70.522,-21.82c-3.007,-3.008 -3.007,-7.882 0,-10.889c3.003,-2.999 7.882,-3.003 10.885,0c12.777,12.781 40.11,17.317 59.637,17.317c19.522,0 46.86,-4.536 59.657,-17.321c3.016,-2.999 7.886,-2.995 10.885,0.008c3.008,3.011 3.003,7.882 -0.008,10.889Zm-5.23,-48.781c-16.373,0 -29.701,-13.324 -29.701,-29.698c0,-16.381 13.328,-29.714 29.701,-29.714c16.378,0 29.706,13.333 29.706,29.714c0,16.374 -13.328,29.698 -29.706,29.698Zm-160.386,-29.702c0,-16.381 13.328,-29.71 29.714,-29.71c16.369,0 29.689,13.329 29.689,29.71c0,16.373 -13.32,29.693 -29.689,29.693c-16.386,0 -29.714,-13.32 -29.714,-29.693Z" />
+            </svg>
+        </a>
+    </li>
+    <li>
+        <a target="_blank" rel="noopener noreferrer" aria-label="share Variational Autoencoders on facebook"
+            href="https://facebook.com/sharer/sharer.php?u=http%3a%2f%2flocalhost%3a1313%2fposts%2fvae%2f">
+            <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve" height="30px" width="30px" fill="currentColor">
+                <path
+                    d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-106.468,0l0,-192.915l66.6,0l12.672,-82.621l-79.272,0l0,-53.617c0,-22.603 11.073,-44.636 46.58,-44.636l36.042,0l0,-70.34c0,0 -32.71,-5.582 -63.982,-5.582c-65.288,0 -107.96,39.569 -107.96,111.204l0,62.971l-72.573,0l0,82.621l72.573,0l0,192.915l-191.104,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Z" />
+            </svg>
+        </a>
+    </li>
+    <li>
+        <a target="_blank" rel="noopener noreferrer" aria-label="share Variational Autoencoders on whatsapp"
+            href="https://api.whatsapp.com/send?text=Variational%20Autoencoders%20-%20http%3a%2f%2flocalhost%3a1313%2fposts%2fvae%2f">
+            <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve" height="30px" width="30px" fill="currentColor">
+                <path
+                    d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-58.673,127.703c-33.842,-33.881 -78.847,-52.548 -126.798,-52.568c-98.799,0 -179.21,80.405 -179.249,179.234c-0.013,31.593 8.241,62.428 23.927,89.612l-25.429,92.884l95.021,-24.925c26.181,14.28 55.659,21.807 85.658,21.816l0.074,0c98.789,0 179.206,-80.413 179.247,-179.243c0.018,-47.895 -18.61,-92.93 -52.451,-126.81Zm-126.797,275.782l-0.06,0c-26.734,-0.01 -52.954,-7.193 -75.828,-20.767l-5.441,-3.229l-56.386,14.792l15.05,-54.977l-3.542,-5.637c-14.913,-23.72 -22.791,-51.136 -22.779,-79.287c0.033,-82.142 66.867,-148.971 149.046,-148.971c39.793,0.014 77.199,15.531 105.329,43.692c28.128,28.16 43.609,65.592 43.594,105.4c-0.034,82.149 -66.866,148.983 -148.983,148.984Zm81.721,-111.581c-4.479,-2.242 -26.499,-13.075 -30.604,-14.571c-4.105,-1.495 -7.091,-2.241 -10.077,2.241c-2.986,4.483 -11.569,14.572 -14.182,17.562c-2.612,2.988 -5.225,3.364 -9.703,1.12c-4.479,-2.241 -18.91,-6.97 -36.017,-22.23c-13.314,-11.876 -22.304,-26.542 -24.916,-31.026c-2.612,-4.484 -0.279,-6.908 1.963,-9.14c2.016,-2.007 4.48,-5.232 6.719,-7.847c2.24,-2.615 2.986,-4.484 4.479,-7.472c1.493,-2.99 0.747,-5.604 -0.374,-7.846c-1.119,-2.241 -10.077,-24.288 -13.809,-33.256c-3.635,-8.733 -7.327,-7.55 -10.077,-7.688c-2.609,-0.13 -5.598,-0.158 -8.583,-0.158c-2.986,0 -7.839,1.121 -11.944,5.604c-4.105,4.484 -15.675,15.32 -15.675,37.364c0,22.046 16.048,43.342 18.287,46.332c2.24,2.99 31.582,48.227 76.511,67.627c10.685,4.615 19.028,7.371 25.533,9.434c10.728,3.41 20.492,2.929 28.209,1.775c8.605,-1.285 26.499,-10.833 30.231,-21.295c3.732,-10.464 3.732,-19.431 2.612,-21.298c-1.119,-1.869 -4.105,-2.99 -8.583,-5.232Z" />
+            </svg>
+        </a>
+    </li>
+    <li>
+        <a target="_blank" rel="noopener noreferrer" aria-label="share Variational Autoencoders on telegram"
+            href="https://telegram.me/share/url?text=Variational%20Autoencoders&amp;url=http%3a%2f%2flocalhost%3a1313%2fposts%2fvae%2f">
+            <svg version="1.1" xml:space="preserve" viewBox="2 2 28 28" height="30px" width="30px" fill="currentColor">
+                <path
+                    d="M26.49,29.86H5.5a3.37,3.37,0,0,1-2.47-1,3.35,3.35,0,0,1-1-2.47V5.48A3.36,3.36,0,0,1,3,3,3.37,3.37,0,0,1,5.5,2h21A3.38,3.38,0,0,1,29,3a3.36,3.36,0,0,1,1,2.46V26.37a3.35,3.35,0,0,1-1,2.47A3.38,3.38,0,0,1,26.49,29.86Zm-5.38-6.71a.79.79,0,0,0,.85-.66L24.73,9.24a.55.55,0,0,0-.18-.46.62.62,0,0,0-.41-.17q-.08,0-16.53,6.11a.59.59,0,0,0-.41.59.57.57,0,0,0,.43.52l4,1.24,1.61,4.83a.62.62,0,0,0,.63.43.56.56,0,0,0,.4-.17L16.54,20l4.09,3A.9.9,0,0,0,21.11,23.15ZM13.8,20.71l-1.21-4q8.72-5.55,8.78-5.55c.15,0,.23,0,.23.16a.18.18,0,0,1,0,.06s-2.51,2.3-7.52,6.8Z" />
+            </svg>
+        </a>
+    </li>
+    <li>
+        <a target="_blank" rel="noopener noreferrer" aria-label="share Variational Autoencoders on ycombinator"
+            href="https://news.ycombinator.com/submitlink?t=Variational%20Autoencoders&u=http%3a%2f%2flocalhost%3a1313%2fposts%2fvae%2f">
+            <svg version="1.1" xml:space="preserve" width="30px" height="30px" viewBox="0 0 512 512" fill="currentColor"
+                xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape">
+                <path
+                    d="M449.446 0C483.971 0 512 28.03 512 62.554L512 449.446C512 483.97 483.97 512 449.446 512L62.554 512C28.03 512 0 483.97 0 449.446L0 62.554C0 28.03 28.029 0 62.554 0L449.446 0ZM183.8767 87.9921H121.8427L230.6673 292.4508V424.0079H281.3328V292.4508L390.1575 87.9921H328.1233L256 238.2489z" />
+            </svg>
+        </a>
+    </li>
+</ul>
+
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+    <span>&copy; 2024 <a href="http://localhost:1313/">Sasmit&#39;s Blog</a></span>
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        if (document.body.className.includes("dark")) {
+            document.body.classList.remove('dark');
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            document.body.classList.add('dark');
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'copied!';
+            setTimeout(() => {
+                copybutton.innerHTML = 'copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+</body>
+
+</html>
+
+
+
+
+
+

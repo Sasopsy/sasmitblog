@@ -1,0 +1,6 @@
+<figure style="text-align: center;">
+    <img src="{{ .Get "src" }}" alt="{{ .Get "alt" }}" style="margin: 0 auto; display: block;">
+    {{ if .Get "title" }}
+    <figcaption>{{ .Get "title" }}</figcaption>
+    {{ end }}
+</figure>

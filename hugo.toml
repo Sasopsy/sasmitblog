@@ -1,0 +1,33 @@
+baseURL = 'https://example.org/'
+languageCode = 'en-us'
+title = "Sasmit's Blog"
+theme = ["PaperMod"]
+
+[markup]
+  [markup.goldmark]
+    [markup.goldmark.extensions]
+      [markup.goldmark.extensions.passthrough]
+        enable = true
+        [markup.goldmark.extensions.passthrough.delimiters]
+          block = [['\[', '\]'], ['$$', '$$']]
+          inline = [['\(', '\)']] 
+[params]
+  math = true
+  ShowShareButtons = true
+  author = ["Sasmit Datta"]
+  ShowCodeCopyButtons = true
+  ShowReadingTime= true
+
+
+
+[params.homeInfoParams]
+Title = "Hi! Welcome to Sasmit's Blog ..."
+Content = "This is just a page where I document my learning notes."
+
+[[params.socialIcons]]
+name = "github"
+url = "https://github.com/Sasopsy"
+
+[[params.socialIcons]]
+name = "linkedin"
+url = "https://www.linkedin.com/in/sasmit-datta-92695b248/"
