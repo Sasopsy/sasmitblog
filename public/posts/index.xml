@@ -2,17 +2,17 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
     <title>Posts on Sasmit&#39;s Blog</title>
-    <link>http://localhost:1313/posts/</link>
+    <link>https://example.org/posts/</link>
     <description>Recent content in Posts on Sasmit&#39;s Blog</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <lastBuildDate>Wed, 10 Apr 2024 23:41:23 +0530</lastBuildDate>
-    <atom:link href="http://localhost:1313/posts/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="https://example.org/posts/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Variational Autoencoders</title>
-      <link>http://localhost:1313/posts/vae/</link>
+      <link>https://example.org/posts/vae/</link>
       <pubDate>Wed, 10 Apr 2024 23:41:23 +0530</pubDate>
-      <guid>http://localhost:1313/posts/vae/</guid>
+      <guid>https://example.org/posts/vae/</guid>
       <description>Introduction An auto-encoder learns an efficient representation of data. It &amp;ldquo;compresses&amp;rdquo; said data into lower dimensional vector and also learns to reconstruct it from said vector called latent vector.
 In variational auto-encoders, apart from also learning to re-construct from the compressed vector, it also learns a mapping to an underlying &amp;ldquo;latent space&amp;rdquo;. This mapping can then help us to generate new variations of the data.
 Problem Statement Fig 1. Directed Graphical Model $\mathbf{z}$ is a continuous random variable sampled from some prior distribution \(p_\theta(\mathbf{z})\).</description>
