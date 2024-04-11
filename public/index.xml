@@ -6,8 +6,16 @@
     <description>Recent content on Sasmit&#39;s Blog</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Wed, 10 Apr 2024 23:41:23 +0530</lastBuildDate>
+    <lastBuildDate>Thu, 11 Apr 2024 22:54:10 +0530</lastBuildDate>
     <atom:link href="https://example.org/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Word2vec</title>
+      <link>https://example.org/posts/word2vec/</link>
+      <pubDate>Thu, 11 Apr 2024 22:54:10 +0530</pubDate>
+      <guid>https://example.org/posts/word2vec/</guid>
+      <description>Word Embeddings Word embeddings is the idea of representing word in the form of vectors to have some notion of similarity and difference between them. Say in a finite dimensional vector space, we want the vectors representing &amp;ldquo;cat&amp;rdquo; and &amp;ldquo;feline&amp;rdquo; to be closer together than the vectors representing &amp;ldquo;human&amp;rdquo; and &amp;ldquo;dog&amp;rdquo;. We want to embed some sort of semantic meaning to the numbers consisting of these vectors.
+One-Hot Encodings Our first thought would be to just represent each word as a one-hot vector.</description>
+    </item>
     <item>
       <title>Variational Autoencoders</title>
       <link>https://example.org/posts/vae/</link>

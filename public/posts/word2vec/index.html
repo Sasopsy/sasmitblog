@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>Word2vec | Sasmit&#39;s Blog</title>
+<meta name="keywords" content="">
+<meta name="description" content="Word Embeddings Word embeddings is the idea of representing word in the form of vectors to have some notion of similarity and difference between them. Say in a finite dimensional vector space, we want the vectors representing &ldquo;cat&rdquo; and &ldquo;feline&rdquo; to be closer together than the vectors representing &ldquo;human&rdquo; and &ldquo;dog&rdquo;. We want to embed some sort of semantic meaning to the numbers consisting of these vectors.
+One-Hot Encodings Our first thought would be to just represent each word as a one-hot vector.">
+<meta name="author" content="Sasmit Datta">
+<link rel="canonical" href="https://example.org/posts/word2vec/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.b609c58d5c11bb90b1a54e04005d74ad1ddf22165eb79f5533967e57df9c3b50.css" integrity="sha256-tgnFjVwRu5CxpU4EAF10rR3fIhZet59VM5Z&#43;V9&#43;cO1A=" rel="preload stylesheet" as="style">
+<link rel="icon" href="https://example.org/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://example.org/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://example.org/favicon-32x32.png">
+<link rel="apple-touch-icon" href="https://example.org/apple-touch-icon.png">
+<link rel="mask-icon" href="https://example.org/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<link rel="alternate" hreflang="en" href="https://example.org/posts/word2vec/">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --code-block-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript><meta property="og:title" content="Word2vec" />
+<meta property="og:description" content="Word Embeddings Word embeddings is the idea of representing word in the form of vectors to have some notion of similarity and difference between them. Say in a finite dimensional vector space, we want the vectors representing &ldquo;cat&rdquo; and &ldquo;feline&rdquo; to be closer together than the vectors representing &ldquo;human&rdquo; and &ldquo;dog&rdquo;. We want to embed some sort of semantic meaning to the numbers consisting of these vectors.
+One-Hot Encodings Our first thought would be to just represent each word as a one-hot vector." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://example.org/posts/word2vec/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2024-04-11T22:54:10+05:30" />
+<meta property="article:modified_time" content="2024-04-11T22:54:10+05:30" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Word2vec"/>
+<meta name="twitter:description" content="Word Embeddings Word embeddings is the idea of representing word in the form of vectors to have some notion of similarity and difference between them. Say in a finite dimensional vector space, we want the vectors representing &ldquo;cat&rdquo; and &ldquo;feline&rdquo; to be closer together than the vectors representing &ldquo;human&rdquo; and &ldquo;dog&rdquo;. We want to embed some sort of semantic meaning to the numbers consisting of these vectors.
+One-Hot Encodings Our first thought would be to just represent each word as a one-hot vector."/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Posts",
+      "item": "https://example.org/posts/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "Word2vec",
+      "item": "https://example.org/posts/word2vec/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Word2vec",
+  "name": "Word2vec",
+  "description": "Word Embeddings Word embeddings is the idea of representing word in the form of vectors to have some notion of similarity and difference between them. Say in a finite dimensional vector space, we want the vectors representing \u0026ldquo;cat\u0026rdquo; and \u0026ldquo;feline\u0026rdquo; to be closer together than the vectors representing \u0026ldquo;human\u0026rdquo; and \u0026ldquo;dog\u0026rdquo;. We want to embed some sort of semantic meaning to the numbers consisting of these vectors.\nOne-Hot Encodings Our first thought would be to just represent each word as a one-hot vector.",
+  "keywords": [
+    
+  ],
+  "articleBody": "Word Embeddings Word embeddings is the idea of representing word in the form of vectors to have some notion of similarity and difference between them. Say in a finite dimensional vector space, we want the vectors representing “cat” and “feline” to be closer together than the vectors representing “human” and “dog”. We want to embed some sort of semantic meaning to the numbers consisting of these vectors.\nOne-Hot Encodings Our first thought would be to just represent each word as a one-hot vector. Representing each word as $\\mathbb{R}^{|V| \\times 1}$ vector where $V$ is our vocabulary set. $$ \\mathbf{w}^{at}=\\begin{bmatrix} 1\\\\ 0\\\\ 0\\\\ \\vdots \\\\ 0\\\\ \\end{bmatrix} \\space, \\space \\mathbf{w}^{zebra}=\\begin{bmatrix} 0\\\\ 0\\\\ 1\\\\ \\vdots \\\\ 0\\\\ \\end{bmatrix}, \\space ... \\space \\mathbf{w}^{tiger}=\\begin{bmatrix} 0\\\\ 0\\\\ 0\\\\ \\vdots \\\\ 1\\\\ \\end{bmatrix} $$ This word representation does not give any notion of similarity, like: $$(\\mathbf{w}^{hotel})^\\intercal \\mathbf{w}^{motel}=(\\mathbf{w}^{hotel})^\\intercal \\mathbf{w}^{cat}=0$$ Goal Our goal is to maximise the following probability: $$P(w_1,w_2,...,w_n)=\\prod_{i=2}^{n}P(w_i|w_{i-1})$$ where $w_i$ is the $i$‘th word of the vocabulary. Now with this framework in mind let’s look into some models that can help us with this objective.\nContinuous Bag of Words Model (CBOW) It involves predicting the centre word from the surrounding context. For each word, we want to learn 2 vectors:\n$\\mathbf{v}$ : (input vector) when the word is in context. $\\mathbf{u}$ : (output vector) when the word in the centre. For example, taking a sequence: $$\\textnormal{The cat jumped over the puddle}$$ We can treat {“The”,“cat”,“over”,“the”,“puddle”} as the surrounding words and “jumped” is centre word. Notation $\\mathbf{w}_i$ : Word $i$ from vocabulary $V$. $n$ : Dimension of each word vector $\\mathcal{V}\\in\\mathbb{R}^{n\\times |V|}$ : Input word matrix. $\\mathbf{v}_i$ : $i$-th column of $\\mathcal{V}$, the input representation of word $w_i$. $\\mathcal{U}\\in\\mathbb{R}^{|V|\\times n}$ : Output word matrix $\\mathbf{u}_i$ : $i$-the row of $\\mathcal{U}$, the output word representation of word $w_i$. Model We generate our one hot representation for the input context size $m$ : $(\\mathbf{x}^{(c-m)},…,\\mathbf{x}^{(c-1)},\\mathbf{x}^{(c+1)},…,\\mathbf{x}^{(c-m)}) \\in \\mathbb{R}^{|V|}$. $\\mathbf{x}^{(c)}$ is the centre word itself. Fetch embedding vectors for our context words: $$(\\mathbf{v}_{c-m}=\\mathcal{V}\\cdot \\mathbf{x}^{(c-m)},...,\\mathbf{v}_{c-1}=\\mathcal{V}\\cdot \\mathbf{x}^{(c-1)},\\mathbf{v}_{c+1}=\\mathcal{V}\\cdot \\mathbf{x}^{(c+1)},...,\\mathbf{v}_{c+m}=\\mathcal{V}\\cdot \\mathbf{x}^{(c-m)}) \\in \\mathbb{R}^{n}$$ Average these vectors to get $\\hat{v}$ : $$\\mathbf{\\hat{v}}=\\frac{\\mathbf{v}_{c-m}+...+\\mathbf{v}_{c-1}+\\mathbf{v}_{c+1}+...+\\mathbf{v}_{c+m}}{2m}\\in \\mathbb{R}^{n}$$ Generate score vector $\\mathbf{z}$ : $$\\mathbf{z}=\\mathcal{U}\\cdot\\mathbf{\\hat{v}}\\in\\mathbb{R}^{|V|}$$ Turn score into probabilities: $$\\hat{\\mathbf{y}}=\\textnormal{softmax}(\\mathbf{z})\\in\\mathbb{R}^{|V|}$$ We want $\\mathbf{\\hat{y}}$ to match $\\mathbf{y}$ which is $\\mathbf{x}^{(c)}$ itself. We do this through the cross entropy loss: $$\\mathcal{L}(\\mathbf{\\hat{y}},\\mathbf{y})=-\\sum_{j=1}^{|V|}y_j\\log \\hat{y}_j$$ Since $\\mathbf{y}$ is a one hot vector, all the other indexes except the index of the centre word can be ignored in the summation, $$\\mathcal{L}(\\mathbf{\\hat{y}},\\mathbf{y})=-y_i\\log\\hat{y}_i$$ where $i$ is the index of the centre word. Stochastic gradient descent is used to update matrices $\\mathcal{V}$ and $\\mathcal{U}$ which make up our word embeddings. Optimisation Objective We want to minimise: $$J=-\\log P(\\mathbf{w}_c|\\mathbf{w}_{c-m},...,\\mathbf{w}_{c-1},\\mathbf{w}_{c+1},...,\\mathbf{w}_{c+m})$$ We can simplify this log probability to: $$J = -\\log P(\\mathbf{u}_c|\\mathbf{\\hat{v}})$$ where $\\mathbf{u}_c$ is the embedding vector of our centre word from our output matrix $\\mathcal{U}$.\nAccording to our model, we take the dot product between our embedding of $\\mathbf{w}_c$ and $\\mathbf{\\hat{v}}$ (average of our embedded word vectors) to compute the similarity, from which we can calculate the probability of the centre word occurring given the context words using a softmax score.\nAs discussed before, we will just have to consider the index of the centre word to get our loss: $$-\\log \\frac{\\exp(\\mathbf{u}_c^\\intercal\\mathbf{\\hat{v}})}{\\sum_{j=1}^{|V|}\\exp(\\mathbf{u}_j^\\intercal\\mathbf{\\hat{v}})}$$ which can yield us our final function: $$J =-\\mathbf{u}_c^\\intercal\\mathbf{\\hat{v}}+\\log\\sum_{j=1}^{|V|}\\exp(\\mathbf{u}_j^\\intercal\\mathbf{\\hat{v}})$$ Skip-Gram Model This is the opposite of what CBOW does. It involves given a centre word, we want to predict the surrounding words. The notation for this model is very same as CBOW but our model is slightly different.\nNotation $\\mathbf{w}_i$ : Word $i$ from vocabulary $V$. $n$ : Dimension of each word vector $\\mathcal{V}\\in\\mathbb{R}^{n\\times |V|}$ : Input word matrix. $\\mathbf{v}_i$ : $i$-th column of $\\mathcal{V}$, the input representation of word $w_i$. $\\mathcal{U}\\in\\mathbb{R}^{|V|\\times n}$ : Output word matrix $\\mathbf{u}_i$ : $i$-the row of $\\mathcal{U}$, the output word representation of word $w_i$. Model We get our one-hot input vector of the centre: $$\\mathbf{x}_c\\in\\mathbb{R}^{|V|}$$ We generate our embedded vector from the centre word: $$\\mathbf{v}_c=\\mathcal{V}\\cdot\\mathbf{x}_c\\in\\mathbb{R}^n$$ Generate score vector: $$\\mathbf{z}=\\mathcal{U}\\mathbf{v}_c$$ Get probabilities: $$\\mathbf{\\hat{y}}=\\textnormal{softmax}(\\mathbf{z})$$ We take this probability distribution and divide it among $2m$ context words: $$(\\mathbf{\\hat{y}}^{(c-m)},...,\\mathbf{\\hat{y}}^{(c-1)},\\mathbf{\\hat{y}}^{(c+1)},...,\\mathbf{\\hat{y}}^{(c-m)}) \\in \\mathbb{R}^{|V|}$$ These are just the same probability distributions calculated using softmax just repeated $2m$ times. We want our probabilities match our true probabilities: $$(\\mathbf{y}^{(c-m)},...,\\mathbf{y}^{(c-1)},\\mathbf{y}^{(c+1)},...,\\mathbf{y}^{(c-m)}) \\in \\mathbb{R}^{|V|}$$ which are one hot vectors of the context words. Similar to CBOW, we cross-entropy to update our embedding matrices. Optimisation Objective We invoke a Naive Bayes assumption to get our probabilities which in this context means given the centre word all output words are completely independent.\nSo our optimisation objective is to minimise: $$J = -\\log P(\\mathbf{w}^{(c-m)},...,\\mathbf{w}^{(c-1)},\\mathbf{w}^{(c+1)},...,\\mathbf{w}^{(c-m)}|\\mathbf{w}_c)$$ Since we are taking the Naive Bayes assumption we can write this as: $$-\\log\\prod_{j=0,j\\neq m}^{2m}P(\\mathbf{w}_{c-m+j}|\\mathbf{w}_c)$$ Now taking our embedding vectors from the matrices $\\mathcal{V}$ and $\\mathcal{U}$. $$-\\log\\prod_{j=0,j\\neq m}^{2m}P(\\mathbf{u}_{c-m+j}|\\mathbf{v}_c)$$ Taking dot product and softmax: $$-\\log\\prod_{j=0,j\\neq m}^{2m}\\frac{\\exp(\\mathbf{u}_{c-m+j}^\\intercal\\mathbf{v}_c)}{\\sum_{k=1}^{|V|}\\exp(\\mathbf{u}_k^\\intercal\\mathbf{v}_c)}$$ Our final optimisation objective becomes: $$J=-\\sum_{j=0,j\\neq m}^{2m}\\mathbf{u}_{c-m+j}^\\intercal\\mathbf{v}_c+2m\\cdot\\log\\sum_{k=1}^{|V|}\\exp(\\mathbf{u}_k^\\intercal\\mathbf{v}_c)$$ Negative Sampling In the objective function of the previous two models, the summation over $|V|$ is huge and is computationally expensive when considering our vocabulary size can be in the millions. A simple idea is to approximate it.\nInstead of summing over the entire vocabulary, we can sample various negative examples.\nNotation $\\mathbf{w}_i$ : Word $i$ from vocabulary $V$. $n$ : Dimension of each word vector $\\mathcal{V}\\in\\mathbb{R}^{n\\times |V|}$ : Input word matrix. $\\mathbf{v}_i$ : $i$-th column of $\\mathcal{V}$, the input representation of word $w_i$. $\\mathcal{U}\\in\\mathbb{R}^{|V|\\times n}$ : Output word matrix $\\mathbf{u}_i$ : $i$-the row of $\\mathcal{U}$, the output word representation of word $\\mathbf{w}_i$. $\\mathbf{c}$ : Context word. $\\theta$ : Parameters of our model, $\\mathcal{V}$ and $\\mathcal{U}$. $\\mathcal{D}$ : Training corpus. $\\hat{\\mathcal{D}}$ : Not training corpus. Will have unnatural sentences which should not exist like, “boil water hell.” Model Consider a word pair $(\\mathbf{w},\\mathbf{c})$. Did this pair from the training corpus? Let probability it came from the corpus ($\\mathcal{D}$) be $$P(X=1|\\mathbf{w},\\mathbf{c};\\theta)$$ and that it came from “not” the training corpus be: $$P(X=0|\\mathbf{w},\\mathbf{c};\\theta)$$ We can easily model $P(X=1|\\mathbf{w},\\mathbf{c};\\theta)$ as a sigmoid. $$P(X=1|\\mathbf{w},\\mathbf{c};\\theta)=\\sigma(\\mathbf{v}_c^\\intercal\\mathbf{v}_w)$$ Our goal:\nMaximise $P(X=1|\\mathbf{w},\\mathbf{c};\\theta)$ if $\\mathbf{w}$ and $\\mathbf{c}$ are from the corpus. Maximise $P(X=0|\\mathbf{w},\\mathbf{c};\\theta)$ if $\\mathbf{w}$ and $\\mathbf{c}$ are not from the corpus. Therefore $$ \\begin{aligned} \\theta \u0026= \\arg\\max_{\\theta}\\prod_{(\\mathbf{w},\\mathbf{c})\\in\\mathcal{D}}P(X=1|\\mathbf{w},\\mathbf{c};\\theta) \\cdot \\prod_{(\\mathbf{w},\\mathbf{c})\\in\\hat{\\mathcal{D}}} P(X=0|\\mathbf{w},\\mathbf{c};\\theta) \\\\ \u0026 = \\arg\\max_{\\theta}\\prod_{(\\mathbf{w},\\mathbf{c})\\in\\mathcal{D}}P(X=1|\\mathbf{w},\\mathbf{c};\\theta) \\cdot \\prod_{(\\mathbf{w},\\mathbf{c})\\in\\hat{\\mathcal{D}}} (1-P(X=1|\\mathbf{w},\\mathbf{c};\\theta)) \\\\ \u0026 = \\arg\\max_{\\theta}\\sum_{(\\mathbf{w},\\mathbf{c})\\in\\mathcal{D}}\\log P(X=1|\\mathbf{w},\\mathbf{c};\\theta)+\\sum_{(\\mathbf{w},\\mathbf{c})\\in\\hat{\\mathcal{D}}} \\log(1-P(X=1|\\mathbf{w},\\mathbf{c};\\theta)) \\\\ \u0026 = \\arg\\max_{\\theta}\\sum_{(\\mathbf{w},\\mathbf{c})\\in\\mathcal{D}}\\log \\left(\\frac{1}{1+\\exp(-\\mathbf{u}_w^\\intercal\\mathbf{v}_c)}\\right)+\\sum_{(\\mathbf{w},\\mathbf{c})\\in\\hat{\\mathcal{D}}} \\log\\left(1-\\frac{1}{1+\\exp(-\\mathbf{u}_w^\\intercal\\mathbf{v}_c)}\\right) \\\\ \u0026 = \\arg\\max_{\\theta}\\sum_{(\\mathbf{w},\\mathbf{c})\\in\\mathcal{D}}\\log \\left(\\frac{1}{1+\\exp(-\\mathbf{u}_w^\\intercal\\mathbf{v}_c)}\\right)+\\sum_{(\\mathbf{w},\\mathbf{c})\\in\\hat{\\mathcal{D}}} \\log\\left(\\frac{1}{1+\\exp(\\mathbf{u}_w^\\intercal\\mathbf{v}_c)}\\right) \\\\ \\end{aligned} $$ CBOW Objective Function Taking this approximation we can change the original objective function for CBOW, $$J =-\\mathbf{u}_c^\\intercal\\mathbf{\\hat{v}}+\\log\\sum_{j=1}^{|V|}\\exp(\\mathbf{u}_j^\\intercal\\mathbf{\\hat{v}})$$ into the following: $$J=-\\log\\sigma(\\mathbf{u}_c^\\intercal\\mathbf{\\hat{v}})-\\sum_{k=1}^{K}\\log\\sigma(-\\hat{\\mathbf{u}}_k^\\intercal\\mathbf{\\hat{v}})$$ where,\n$\\hat{\\mathbf{u}}_k$ is embedding of a word in “not training corpus”. $K$ is the total number of words in a sample. Skip-Gram Objective Function We can do the same thing for the skip-gram objective function, $$J=-\\sum_{j=0,j\\neq m}^{2m}\\mathbf{u}_{c-m+j}^\\intercal\\mathbf{v}_c+2m\\cdot\\log\\sum_{k=1}^{|V|}\\exp(\\mathbf{u}_k^\\intercal\\mathbf{v}_c)$$ So our objective function for a given centre word $c$ and context word $c-m+j$ will be: $$J=-\\log\\sigma(\\mathbf{u}_{c-m+j}^\\intercal\\mathbf{v}_c)-\\sum_{k=1}^{K}\\log\\sigma(-\\hat{\\mathbf{u}}_k^\\intercal\\mathbf{v}_c)$$ where,\n$\\hat{\\mathbf{u}}_k$ is embedding of a word in “not training corpus”. $K$ is the total number of words in a sample. Sampling From “Not Training Corpus” Unigram Distribution Unigram distribution is a probability distribution where the words are distributed according their frequency occurrence, i.e. the chance of a word being negatively sampled is directly proportional to the number of times they appear in the training corpora. This is unlike uniform distribution where every word has an equal likelihood of being selected.\nWe have a set of numbers, $$N(\\mathbf{w})=[2,4,5,...,|V|\\space numbers]$$ each representing the frequency of the word, corresponding to its index, in the entire corpus.\nFinally, to get our distribution, we normalise each number in the set with the total number of words in the corpus. $$Un(\\mathbf{w})=\\left[\\frac{2}{\\textnormal{len}(corpus)},\\frac{4}{\\textnormal{len}(corpus)},\\frac{5}{\\textnormal{len}(corpus)},...,|V|\\space numbers \\right]$$ Power Law According to the original paper, instead of just using the unigram distribution to sample from, we raise it to a power $3/4$. $$P(\\mathbf{w})=Un^{\\frac{3}{4}}(\\mathbf{w})$$ This increases rarer words being sampled more often and balances out the negative sampling process.\nThere is no theoretical explanation on why $3/4$ was chosen. It is mostly based on empirical results.\nReferences CS224N Lecture Playlist ",
+  "wordCount" : "1300",
+  "inLanguage": "en",
+  "datePublished": "2024-04-11T22:54:10+05:30",
+  "dateModified": "2024-04-11T22:54:10+05:30",
+  "author":[{
+    "@type": "Person",
+    "name": "Sasmit Datta"
+  }],
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://example.org/posts/word2vec/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Sasmit's Blog",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://example.org/favicon.ico"
+    }
+  }
+}
+</script>
+    
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" crossorigin="anonymous"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    renderMathInElement(document.body, {
+      delimiters: [
+        {left: '\\[', right: '\\]', display: true},   
+        {left: '$$', right: '$$', display: true},     
+        {left: '\\(', right: '\\)', display: false},  
+        {left: '$', right: '$', display: false}
+      ],
+      throwOnError : false
+    });
+  });
+</script>
+    
+</head>
+
+<body class="" id="top">
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.body.classList.add('dark');
+    } else if (localStorage.getItem("pref-theme") === "light") {
+        document.body.classList.remove('dark')
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="https://example.org/" accesskey="h" title="Sasmit&#39;s Blog (Alt + H)">Sasmit&#39;s Blog</a>
+            <div class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <ul id="menu">
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    
+    <h1 class="post-title entry-hint-parent">
+      Word2vec
+    </h1>
+    <div class="post-meta"><span title='2024-04-11 22:54:10 +0530 IST'>April 11, 2024</span>&nbsp;·&nbsp;7 min&nbsp;·&nbsp;Sasmit Datta
+
+</div>
+  </header> <div class="toc">
+    <details >
+        <summary accesskey="c" title="(Alt + C)">
+            <span class="details">Table of Contents</span>
+        </summary>
+
+        <div class="inner"><ul>
+                <li>
+                    <a href="#word-embeddings" aria-label="Word Embeddings">Word Embeddings</a></li>
+                <li>
+                    <a href="#one-hot-encodings" aria-label="One-Hot Encodings">One-Hot Encodings</a></li>
+                <li>
+                    <a href="#goal" aria-label="Goal">Goal</a></li>
+                <li>
+                    <a href="#continuous-bag-of-words-model-cbow" aria-label="Continuous Bag of Words Model (CBOW)">Continuous Bag of Words Model (CBOW)</a><ul>
+                        
+                <li>
+                    <a href="#notation" aria-label="Notation">Notation</a></li>
+                <li>
+                    <a href="#model" aria-label="Model">Model</a></li>
+                <li>
+                    <a href="#optimisation-objective" aria-label="Optimisation Objective">Optimisation Objective</a></li></ul>
+                </li>
+                <li>
+                    <a href="#skip-gram-model" aria-label="Skip-Gram Model">Skip-Gram Model</a><ul>
+                        
+                <li>
+                    <a href="#notation-1" aria-label="Notation">Notation</a></li>
+                <li>
+                    <a href="#model-1" aria-label="Model">Model</a></li>
+                <li>
+                    <a href="#optimisation-objective-1" aria-label="Optimisation Objective">Optimisation Objective</a></li></ul>
+                </li>
+                <li>
+                    <a href="#negative-sampling" aria-label="Negative Sampling">Negative Sampling</a><ul>
+                        
+                <li>
+                    <a href="#notation-2" aria-label="Notation">Notation</a></li>
+                <li>
+                    <a href="#model-2" aria-label="Model">Model</a></li>
+                <li>
+                    <a href="#cbow-objective-function" aria-label="CBOW Objective Function">CBOW Objective Function</a></li>
+                <li>
+                    <a href="#skip-gram-objective-function" aria-label="Skip-Gram Objective Function">Skip-Gram Objective Function</a></li>
+                <li>
+                    <a href="#sampling-from-not-training-corpus" aria-label="Sampling From &ldquo;Not Training Corpus&rdquo;">Sampling From &ldquo;Not Training Corpus&rdquo;</a><ul>
+                        
+                <li>
+                    <a href="#unigram-distribution" aria-label="Unigram Distribution">Unigram Distribution</a></li>
+                <li>
+                    <a href="#power-law" aria-label="Power Law">Power Law</a></li></ul>
+                </li></ul>
+                </li>
+                <li>
+                    <a href="#references" aria-label="References">References</a>
+                </li>
+            </ul>
+        </div>
+    </details>
+</div>
+
+  <div class="post-content"><h1 id="word-embeddings">Word Embeddings<a hidden class="anchor" aria-hidden="true" href="#word-embeddings">#</a></h1>
+<p>Word embeddings is the idea of representing word in the form of vectors to have some notion of <strong>similarity</strong> and <strong>difference</strong> between them. Say in a finite dimensional vector space, we want the vectors representing &ldquo;cat&rdquo; and &ldquo;feline&rdquo; to be <em>closer</em> together than the vectors representing &ldquo;human&rdquo; and &ldquo;dog&rdquo;. We want to embed some sort of semantic meaning to the numbers consisting of these vectors.</p>
+<h1 id="one-hot-encodings">One-Hot Encodings<a hidden class="anchor" aria-hidden="true" href="#one-hot-encodings">#</a></h1>
+<p>Our first thought would be to just represent each word as a one-hot vector. Representing each word as $\mathbb{R}^{|V| \times 1}$ vector where $V$ is our vocabulary set.
+</p>
+$$
+\mathbf{w}^{at}=\begin{bmatrix} 
+1\\
+0\\
+0\\
+\vdots \\
+0\\
+\end{bmatrix}
+\space,
+\space
+\mathbf{w}^{zebra}=\begin{bmatrix} 
+0\\
+0\\
+1\\
+\vdots \\
+0\\
+\end{bmatrix},
+\space
+...
+\space
+\mathbf{w}^{tiger}=\begin{bmatrix} 
+0\\
+0\\
+0\\
+\vdots \\
+1\\
+\end{bmatrix}
+$$
+<p>
+This word representation does not give any notion of similarity, like:
+</p>
+$$(\mathbf{w}^{hotel})^\intercal \mathbf{w}^{motel}=(\mathbf{w}^{hotel})^\intercal \mathbf{w}^{cat}=0$$
+<h1 id="goal">Goal<a hidden class="anchor" aria-hidden="true" href="#goal">#</a></h1>
+<p>Our goal is to maximise the following probability:
+</p>
+$$P(w_1,w_2,...,w_n)=\prod_{i=2}^{n}P(w_i|w_{i-1})$$
+<p>
+where $w_i$ is the $i$&lsquo;th word of the vocabulary. Now with this framework in mind let&rsquo;s look into some models that can help us with this objective.</p>
+<h1 id="continuous-bag-of-words-model-cbow">Continuous Bag of Words Model (CBOW)<a hidden class="anchor" aria-hidden="true" href="#continuous-bag-of-words-model-cbow">#</a></h1>
+<p>It involves predicting the centre word from the surrounding context. For each word, we want to learn 2 vectors:</p>
+<ul>
+<li>$\mathbf{v}$ : (input vector) when the word is in context.</li>
+<li>$\mathbf{u}$ : (output vector) when the word in the centre.
+For example, taking a sequence:
+$$\textnormal{The cat jumped over the puddle}$$
+We can treat {&ldquo;The&rdquo;,&ldquo;cat&rdquo;,&ldquo;over&rdquo;,&ldquo;the&rdquo;,&ldquo;puddle&rdquo;} as the surrounding words and &ldquo;jumped&rdquo; is centre word.</li>
+</ul>
+<h2 id="notation">Notation<a hidden class="anchor" aria-hidden="true" href="#notation">#</a></h2>
+<ul>
+<li>$\mathbf{w}_i$ : Word $i$ from vocabulary $V$.</li>
+<li>$n$ : Dimension of each word vector</li>
+<li>$\mathcal{V}\in\mathbb{R}^{n\times |V|}$ : Input word matrix.</li>
+<li>$\mathbf{v}_i$ : $i$-th column of $\mathcal{V}$, the input representation of word $w_i$.</li>
+<li>$\mathcal{U}\in\mathbb{R}^{|V|\times n}$ :  Output word matrix</li>
+<li>$\mathbf{u}_i$ : $i$-the row of $\mathcal{U}$, the output word representation of word $w_i$.</li>
+</ul>
+<h2 id="model">Model<a hidden class="anchor" aria-hidden="true" href="#model">#</a></h2>
+<ul>
+<li>We generate our one hot representation for the input context size $m$ : $(\mathbf{x}^{(c-m)},&hellip;,\mathbf{x}^{(c-1)},\mathbf{x}^{(c+1)},&hellip;,\mathbf{x}^{(c-m)}) \in \mathbb{R}^{|V|}$.</li>
+<li>$\mathbf{x}^{(c)}$ is the <strong>centre</strong> word itself.</li>
+<li>Fetch <strong>embedding vectors</strong> for our context words:
+$$(\mathbf{v}_{c-m}=\mathcal{V}\cdot \mathbf{x}^{(c-m)},...,\mathbf{v}_{c-1}=\mathcal{V}\cdot \mathbf{x}^{(c-1)},\mathbf{v}_{c+1}=\mathcal{V}\cdot \mathbf{x}^{(c+1)},...,\mathbf{v}_{c+m}=\mathcal{V}\cdot \mathbf{x}^{(c-m)}) \in \mathbb{R}^{n}$$</li>
+<li>Average these vectors to get $\hat{v}$ :
+$$\mathbf{\hat{v}}=\frac{\mathbf{v}_{c-m}+...+\mathbf{v}_{c-1}+\mathbf{v}_{c+1}+...+\mathbf{v}_{c+m}}{2m}\in \mathbb{R}^{n}$$</li>
+<li>Generate score vector $\mathbf{z}$ :
+$$\mathbf{z}=\mathcal{U}\cdot\mathbf{\hat{v}}\in\mathbb{R}^{|V|}$$</li>
+<li>Turn score into probabilities:
+$$\hat{\mathbf{y}}=\textnormal{softmax}(\mathbf{z})\in\mathbb{R}^{|V|}$$</li>
+<li>We want $\mathbf{\hat{y}}$ to match $\mathbf{y}$ which is $\mathbf{x}^{(c)}$ itself.</li>
+<li>We do this through the cross entropy loss:
+$$\mathcal{L}(\mathbf{\hat{y}},\mathbf{y})=-\sum_{j=1}^{|V|}y_j\log \hat{y}_j$$</li>
+<li>Since $\mathbf{y}$ is a one hot vector, all the other indexes except the index of the centre word can be ignored in the summation,
+$$\mathcal{L}(\mathbf{\hat{y}},\mathbf{y})=-y_i\log\hat{y}_i$$
+where $i$ is the index of the centre word.</li>
+<li>Stochastic gradient descent is used to update matrices $\mathcal{V}$ and $\mathcal{U}$ which make up our word embeddings.</li>
+</ul>
+<h2 id="optimisation-objective">Optimisation Objective<a hidden class="anchor" aria-hidden="true" href="#optimisation-objective">#</a></h2>
+<p>We want to minimise:
+</p>
+$$J=-\log P(\mathbf{w}_c|\mathbf{w}_{c-m},...,\mathbf{w}_{c-1},\mathbf{w}_{c+1},...,\mathbf{w}_{c+m})$$
+<p>
+We can simplify this log probability to:
+</p>
+$$J = -\log P(\mathbf{u}_c|\mathbf{\hat{v}})$$
+<p>
+where $\mathbf{u}_c$ is the embedding vector of our centre word from our output matrix $\mathcal{U}$.</p>
+<p>According to our model, we take the dot product between our embedding of $\mathbf{w}_c$ and $\mathbf{\hat{v}}$ (average of our embedded word vectors) to compute the similarity, from which we can calculate the probability of the centre word occurring given the context words using a softmax score.</p>
+<p>As discussed before, we will just have to consider the index of the centre word to get our loss:
+</p>
+$$-\log \frac{\exp(\mathbf{u}_c^\intercal\mathbf{\hat{v}})}{\sum_{j=1}^{|V|}\exp(\mathbf{u}_j^\intercal\mathbf{\hat{v}})}$$
+<p>
+which can yield us our final function:
+</p>
+$$J =-\mathbf{u}_c^\intercal\mathbf{\hat{v}}+\log\sum_{j=1}^{|V|}\exp(\mathbf{u}_j^\intercal\mathbf{\hat{v}})$$
+<h1 id="skip-gram-model">Skip-Gram Model<a hidden class="anchor" aria-hidden="true" href="#skip-gram-model">#</a></h1>
+<p>This is the opposite of what CBOW does. It involves given a centre word, we want to predict the surrounding words. The notation for this model is very same as CBOW but our model is slightly different.</p>
+<h2 id="notation-1">Notation<a hidden class="anchor" aria-hidden="true" href="#notation-1">#</a></h2>
+<ul>
+<li>$\mathbf{w}_i$ : Word $i$ from vocabulary $V$.</li>
+<li>$n$ : Dimension of each word vector</li>
+<li>$\mathcal{V}\in\mathbb{R}^{n\times |V|}$ : Input word matrix.</li>
+<li>$\mathbf{v}_i$ : $i$-th column of $\mathcal{V}$, the input representation of word $w_i$.</li>
+<li>$\mathcal{U}\in\mathbb{R}^{|V|\times n}$ :  Output word matrix</li>
+<li>$\mathbf{u}_i$ : $i$-the row of $\mathcal{U}$, the output word representation of word $w_i$.</li>
+</ul>
+<h2 id="model-1">Model<a hidden class="anchor" aria-hidden="true" href="#model-1">#</a></h2>
+<ul>
+<li>We get our one-hot input vector of the centre:
+$$\mathbf{x}_c\in\mathbb{R}^{|V|}$$</li>
+<li>We generate our embedded vector from the centre word:
+$$\mathbf{v}_c=\mathcal{V}\cdot\mathbf{x}_c\in\mathbb{R}^n$$</li>
+<li>Generate score vector:
+$$\mathbf{z}=\mathcal{U}\mathbf{v}_c$$</li>
+<li>Get probabilities:
+$$\mathbf{\hat{y}}=\textnormal{softmax}(\mathbf{z})$$</li>
+<li>We take this probability distribution and divide it among $2m$ context words:
+$$(\mathbf{\hat{y}}^{(c-m)},...,\mathbf{\hat{y}}^{(c-1)},\mathbf{\hat{y}}^{(c+1)},...,\mathbf{\hat{y}}^{(c-m)}) \in \mathbb{R}^{|V|}$$
+These are just the same probability distributions calculated using softmax just repeated $2m$ times.</li>
+<li>We want our probabilities match our true probabilities:
+$$(\mathbf{y}^{(c-m)},...,\mathbf{y}^{(c-1)},\mathbf{y}^{(c+1)},...,\mathbf{y}^{(c-m)}) \in \mathbb{R}^{|V|}$$
+which are one hot vectors of the context words.</li>
+<li>Similar to CBOW, we cross-entropy to update our embedding matrices.</li>
+</ul>
+<h2 id="optimisation-objective-1">Optimisation Objective<a hidden class="anchor" aria-hidden="true" href="#optimisation-objective-1">#</a></h2>
+<p>We invoke a <strong>Naive Bayes</strong> assumption to get our probabilities which in this context means given the centre word all output words are completely independent.</p>
+<p>So our optimisation objective is to minimise:
+</p>
+$$J = -\log P(\mathbf{w}^{(c-m)},...,\mathbf{w}^{(c-1)},\mathbf{w}^{(c+1)},...,\mathbf{w}^{(c-m)}|\mathbf{w}_c)$$
+<p>
+Since we are taking the Naive Bayes assumption we can write this as:
+</p>
+$$-\log\prod_{j=0,j\neq m}^{2m}P(\mathbf{w}_{c-m+j}|\mathbf{w}_c)$$
+<p>
+Now taking our embedding vectors from the matrices $\mathcal{V}$ and $\mathcal{U}$.
+</p>
+$$-\log\prod_{j=0,j\neq m}^{2m}P(\mathbf{u}_{c-m+j}|\mathbf{v}_c)$$
+<p>
+Taking dot product and softmax:
+</p>
+$$-\log\prod_{j=0,j\neq m}^{2m}\frac{\exp(\mathbf{u}_{c-m+j}^\intercal\mathbf{v}_c)}{\sum_{k=1}^{|V|}\exp(\mathbf{u}_k^\intercal\mathbf{v}_c)}$$
+<p>
+Our final optimisation objective becomes:
+</p>
+$$J=-\sum_{j=0,j\neq m}^{2m}\mathbf{u}_{c-m+j}^\intercal\mathbf{v}_c+2m\cdot\log\sum_{k=1}^{|V|}\exp(\mathbf{u}_k^\intercal\mathbf{v}_c)$$
+<h1 id="negative-sampling">Negative Sampling<a hidden class="anchor" aria-hidden="true" href="#negative-sampling">#</a></h1>
+<p>In the objective function of the previous two models, the summation over $|V|$ is huge and is computationally expensive when considering our vocabulary size can be in the millions. A simple idea is to approximate it.</p>
+<p>Instead of summing over the entire vocabulary, we can sample various negative examples.</p>
+<h2 id="notation-2">Notation<a hidden class="anchor" aria-hidden="true" href="#notation-2">#</a></h2>
+<ul>
+<li>$\mathbf{w}_i$ : Word $i$ from vocabulary $V$.</li>
+<li>$n$ : Dimension of each word vector</li>
+<li>$\mathcal{V}\in\mathbb{R}^{n\times |V|}$ : Input word matrix.</li>
+<li>$\mathbf{v}_i$ : $i$-th column of $\mathcal{V}$, the input representation of word $w_i$.</li>
+<li>$\mathcal{U}\in\mathbb{R}^{|V|\times n}$ :  Output word matrix</li>
+<li>$\mathbf{u}_i$ : $i$-the row of $\mathcal{U}$, the output word representation of word $\mathbf{w}_i$.</li>
+<li>$\mathbf{c}$ : Context word.</li>
+<li>$\theta$ : Parameters of our model, $\mathcal{V}$ and $\mathcal{U}$.</li>
+<li>$\mathcal{D}$ : Training corpus.</li>
+<li>$\hat{\mathcal{D}}$ : Not training corpus. Will have unnatural sentences which should not exist like, &ldquo;boil water hell.&rdquo;</li>
+</ul>
+<h2 id="model-2">Model<a hidden class="anchor" aria-hidden="true" href="#model-2">#</a></h2>
+<p>Consider a word pair $(\mathbf{w},\mathbf{c})$. Did this pair from the training corpus? Let probability it came from the corpus ($\mathcal{D}$) be
+</p>
+$$P(X=1|\mathbf{w},\mathbf{c};\theta)$$
+<p>
+and that it came from &ldquo;not&rdquo; the training corpus be:
+</p>
+$$P(X=0|\mathbf{w},\mathbf{c};\theta)$$
+<p>
+We can easily model $P(X=1|\mathbf{w},\mathbf{c};\theta)$ as a sigmoid.
+</p>
+$$P(X=1|\mathbf{w},\mathbf{c};\theta)=\sigma(\mathbf{v}_c^\intercal\mathbf{v}_w)$$
+<p>
+Our goal:</p>
+<ul>
+<li>Maximise $P(X=1|\mathbf{w},\mathbf{c};\theta)$ if $\mathbf{w}$ and $\mathbf{c}$ are from the corpus.</li>
+<li>Maximise $P(X=0|\mathbf{w},\mathbf{c};\theta)$ if $\mathbf{w}$ and $\mathbf{c}$ are not from the corpus.</li>
+</ul>
+<p>Therefore
+</p>
+$$
+\begin{aligned} 
+\theta &= \arg\max_{\theta}\prod_{(\mathbf{w},\mathbf{c})\in\mathcal{D}}P(X=1|\mathbf{w},\mathbf{c};\theta) \cdot \prod_{(\mathbf{w},\mathbf{c})\in\hat{\mathcal{D}}} P(X=0|\mathbf{w},\mathbf{c};\theta) \\
+& = \arg\max_{\theta}\prod_{(\mathbf{w},\mathbf{c})\in\mathcal{D}}P(X=1|\mathbf{w},\mathbf{c};\theta) \cdot \prod_{(\mathbf{w},\mathbf{c})\in\hat{\mathcal{D}}} (1-P(X=1|\mathbf{w},\mathbf{c};\theta)) \\
+& = \arg\max_{\theta}\sum_{(\mathbf{w},\mathbf{c})\in\mathcal{D}}\log P(X=1|\mathbf{w},\mathbf{c};\theta)+\sum_{(\mathbf{w},\mathbf{c})\in\hat{\mathcal{D}}} \log(1-P(X=1|\mathbf{w},\mathbf{c};\theta)) \\
+& = \arg\max_{\theta}\sum_{(\mathbf{w},\mathbf{c})\in\mathcal{D}}\log \left(\frac{1}{1+\exp(-\mathbf{u}_w^\intercal\mathbf{v}_c)}\right)+\sum_{(\mathbf{w},\mathbf{c})\in\hat{\mathcal{D}}} \log\left(1-\frac{1}{1+\exp(-\mathbf{u}_w^\intercal\mathbf{v}_c)}\right) \\
+& = \arg\max_{\theta}\sum_{(\mathbf{w},\mathbf{c})\in\mathcal{D}}\log \left(\frac{1}{1+\exp(-\mathbf{u}_w^\intercal\mathbf{v}_c)}\right)+\sum_{(\mathbf{w},\mathbf{c})\in\hat{\mathcal{D}}} \log\left(\frac{1}{1+\exp(\mathbf{u}_w^\intercal\mathbf{v}_c)}\right) \\
+\end{aligned} 
+$$
+<h2 id="cbow-objective-function">CBOW Objective Function<a hidden class="anchor" aria-hidden="true" href="#cbow-objective-function">#</a></h2>
+<p>Taking this approximation we can change the original objective function for CBOW,
+</p>
+$$J =-\mathbf{u}_c^\intercal\mathbf{\hat{v}}+\log\sum_{j=1}^{|V|}\exp(\mathbf{u}_j^\intercal\mathbf{\hat{v}})$$
+<p>
+into the following:
+</p>
+$$J=-\log\sigma(\mathbf{u}_c^\intercal\mathbf{\hat{v}})-\sum_{k=1}^{K}\log\sigma(-\hat{\mathbf{u}}_k^\intercal\mathbf{\hat{v}})$$
+<p>
+where,</p>
+<ul>
+<li>$\hat{\mathbf{u}}_k$ is embedding of a word in &ldquo;not training corpus&rdquo;.</li>
+<li>$K$ is the total number of words in a sample.</li>
+</ul>
+<h2 id="skip-gram-objective-function">Skip-Gram Objective Function<a hidden class="anchor" aria-hidden="true" href="#skip-gram-objective-function">#</a></h2>
+<p>We can do the same thing for the skip-gram objective function,
+</p>
+$$J=-\sum_{j=0,j\neq m}^{2m}\mathbf{u}_{c-m+j}^\intercal\mathbf{v}_c+2m\cdot\log\sum_{k=1}^{|V|}\exp(\mathbf{u}_k^\intercal\mathbf{v}_c)$$
+<p>
+So our objective function for a given centre word $c$ and context word $c-m+j$ will be:
+</p>
+$$J=-\log\sigma(\mathbf{u}_{c-m+j}^\intercal\mathbf{v}_c)-\sum_{k=1}^{K}\log\sigma(-\hat{\mathbf{u}}_k^\intercal\mathbf{v}_c)$$
+<p>
+where,</p>
+<ul>
+<li>$\hat{\mathbf{u}}_k$ is embedding of a word in &ldquo;not training corpus&rdquo;.</li>
+<li>$K$ is the total number of words in a sample.</li>
+</ul>
+<h2 id="sampling-from-not-training-corpus">Sampling From &ldquo;Not Training Corpus&rdquo;<a hidden class="anchor" aria-hidden="true" href="#sampling-from-not-training-corpus">#</a></h2>
+<h3 id="unigram-distribution">Unigram Distribution<a hidden class="anchor" aria-hidden="true" href="#unigram-distribution">#</a></h3>
+<p>Unigram distribution is a probability distribution where the words are distributed according their frequency occurrence, i.e. the chance of a word being negatively sampled is directly proportional to the number of times they appear in the training corpora. This is unlike <strong>uniform distribution</strong> where every word has an equal likelihood of being selected.</p>
+<p>We have a set of numbers,
+</p>
+$$N(\mathbf{w})=[2,4,5,...,|V|\space numbers]$$
+<p>
+each representing the frequency of the word, corresponding to its index, in the entire corpus.</p>
+<p>Finally, to get our distribution, we normalise each number in the set with the total number of words in the corpus.
+</p>
+$$Un(\mathbf{w})=\left[\frac{2}{\textnormal{len}(corpus)},\frac{4}{\textnormal{len}(corpus)},\frac{5}{\textnormal{len}(corpus)},...,|V|\space numbers \right]$$
+<h3 id="power-law">Power Law<a hidden class="anchor" aria-hidden="true" href="#power-law">#</a></h3>
+<p>According to the original paper, instead of just using the unigram distribution to sample from, we raise it to a power $3/4$.
+</p>
+$$P(\mathbf{w})=Un^{\frac{3}{4}}(\mathbf{w})$$
+<p>
+This increases rarer words being sampled more often and balances out the negative sampling process.</p>
+<p>There is no theoretical explanation on why $3/4$ was chosen. It is mostly based on empirical results.</p>
+<h1 id="references">References<a hidden class="anchor" aria-hidden="true" href="#references">#</a></h1>
+<ul>
+<li><a href="https://www.youtube.com/playlist?list=PLoROMvodv4rMFqRtEuo6SGjY4XbRIVRd4">CS224N Lecture Playlist</a></li>
+</ul>
+
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+    </ul>
+
+<ul class="share-buttons">
+    <li>
+        <a target="_blank" rel="noopener noreferrer" aria-label="share Word2vec on x"
+            href="https://x.com/intent/tweet/?text=Word2vec&amp;url=https%3a%2f%2fexample.org%2fposts%2fword2vec%2f&amp;hashtags=">
+            <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve" height="30px" width="30px" fill="currentColor">
+                <path
+                    d="M512 62.554 L 512 449.446 C 512 483.97 483.97 512 449.446 512 L 62.554 512 C 28.03 512 0 483.97 0 449.446 L 0 62.554 C 0 28.03 28.029 0 62.554 0 L 449.446 0 C 483.971 0 512 28.03 512 62.554 Z M 269.951 190.75 L 182.567 75.216 L 56 75.216 L 207.216 272.95 L 63.9 436.783 L 125.266 436.783 L 235.9 310.383 L 332.567 436.783 L 456 436.783 L 298.367 228.367 L 432.367 75.216 L 371.033 75.216 Z M 127.633 110 L 164.101 110 L 383.481 400.065 L 349.5 400.065 Z" />
+            </svg>
+        </a>
+    </li>
+    <li>
+        <a target="_blank" rel="noopener noreferrer" aria-label="share Word2vec on linkedin"
+            href="https://www.linkedin.com/shareArticle?mini=true&amp;url=https%3a%2f%2fexample.org%2fposts%2fword2vec%2f&amp;title=Word2vec&amp;summary=Word2vec&amp;source=https%3a%2f%2fexample.org%2fposts%2fword2vec%2f">
+            <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve" height="30px" width="30px" fill="currentColor">
+                <path
+                    d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-288.985,423.278l0,-225.717l-75.04,0l0,225.717l75.04,0Zm270.539,0l0,-129.439c0,-69.333 -37.018,-101.586 -86.381,-101.586c-39.804,0 -57.634,21.891 -67.617,37.266l0,-31.958l-75.021,0c0.995,21.181 0,225.717 0,225.717l75.02,0l0,-126.056c0,-6.748 0.486,-13.492 2.474,-18.315c5.414,-13.475 17.767,-27.434 38.494,-27.434c27.135,0 38.007,20.707 38.007,51.037l0,120.768l75.024,0Zm-307.552,-334.556c-25.674,0 -42.448,16.879 -42.448,39.002c0,21.658 16.264,39.002 41.455,39.002l0.484,0c26.165,0 42.452,-17.344 42.452,-39.002c-0.485,-22.092 -16.241,-38.954 -41.943,-39.002Z" />
+            </svg>
+        </a>
+    </li>
+    <li>
+        <a target="_blank" rel="noopener noreferrer" aria-label="share Word2vec on reddit"
+            href="https://reddit.com/submit?url=https%3a%2f%2fexample.org%2fposts%2fword2vec%2f&title=Word2vec">
+            <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve" height="30px" width="30px" fill="currentColor">
+                <path
+                    d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-3.446,265.638c0,-22.964 -18.616,-41.58 -41.58,-41.58c-11.211,0 -21.361,4.457 -28.841,11.666c-28.424,-20.508 -67.586,-33.757 -111.204,-35.278l18.941,-89.121l61.884,13.157c0.756,15.734 13.642,28.29 29.56,28.29c16.407,0 29.706,-13.299 29.706,-29.701c0,-16.403 -13.299,-29.702 -29.706,-29.702c-11.666,0 -21.657,6.792 -26.515,16.578l-69.105,-14.69c-1.922,-0.418 -3.939,-0.042 -5.585,1.036c-1.658,1.073 -2.811,2.761 -3.224,4.686l-21.152,99.438c-44.258,1.228 -84.046,14.494 -112.837,35.232c-7.468,-7.164 -17.589,-11.591 -28.757,-11.591c-22.965,0 -41.585,18.616 -41.585,41.58c0,16.896 10.095,31.41 24.568,37.918c-0.639,4.135 -0.99,8.328 -0.99,12.576c0,63.977 74.469,115.836 166.33,115.836c91.861,0 166.334,-51.859 166.334,-115.836c0,-4.218 -0.347,-8.387 -0.977,-12.493c14.564,-6.47 24.735,-21.034 24.735,-38.001Zm-119.474,108.193c-20.27,20.241 -59.115,21.816 -70.534,21.816c-11.428,0 -50.277,-1.575 -70.522,-21.82c-3.007,-3.008 -3.007,-7.882 0,-10.889c3.003,-2.999 7.882,-3.003 10.885,0c12.777,12.781 40.11,17.317 59.637,17.317c19.522,0 46.86,-4.536 59.657,-17.321c3.016,-2.999 7.886,-2.995 10.885,0.008c3.008,3.011 3.003,7.882 -0.008,10.889Zm-5.23,-48.781c-16.373,0 -29.701,-13.324 -29.701,-29.698c0,-16.381 13.328,-29.714 29.701,-29.714c16.378,0 29.706,13.333 29.706,29.714c0,16.374 -13.328,29.698 -29.706,29.698Zm-160.386,-29.702c0,-16.381 13.328,-29.71 29.714,-29.71c16.369,0 29.689,13.329 29.689,29.71c0,16.373 -13.32,29.693 -29.689,29.693c-16.386,0 -29.714,-13.32 -29.714,-29.693Z" />
+            </svg>
+        </a>
+    </li>
+    <li>
+        <a target="_blank" rel="noopener noreferrer" aria-label="share Word2vec on facebook"
+            href="https://facebook.com/sharer/sharer.php?u=https%3a%2f%2fexample.org%2fposts%2fword2vec%2f">
+            <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve" height="30px" width="30px" fill="currentColor">
+                <path
+                    d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-106.468,0l0,-192.915l66.6,0l12.672,-82.621l-79.272,0l0,-53.617c0,-22.603 11.073,-44.636 46.58,-44.636l36.042,0l0,-70.34c0,0 -32.71,-5.582 -63.982,-5.582c-65.288,0 -107.96,39.569 -107.96,111.204l0,62.971l-72.573,0l0,82.621l72.573,0l0,192.915l-191.104,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Z" />
+            </svg>
+        </a>
+    </li>
+    <li>
+        <a target="_blank" rel="noopener noreferrer" aria-label="share Word2vec on whatsapp"
+            href="https://api.whatsapp.com/send?text=Word2vec%20-%20https%3a%2f%2fexample.org%2fposts%2fword2vec%2f">
+            <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve" height="30px" width="30px" fill="currentColor">
+                <path
+                    d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-58.673,127.703c-33.842,-33.881 -78.847,-52.548 -126.798,-52.568c-98.799,0 -179.21,80.405 -179.249,179.234c-0.013,31.593 8.241,62.428 23.927,89.612l-25.429,92.884l95.021,-24.925c26.181,14.28 55.659,21.807 85.658,21.816l0.074,0c98.789,0 179.206,-80.413 179.247,-179.243c0.018,-47.895 -18.61,-92.93 -52.451,-126.81Zm-126.797,275.782l-0.06,0c-26.734,-0.01 -52.954,-7.193 -75.828,-20.767l-5.441,-3.229l-56.386,14.792l15.05,-54.977l-3.542,-5.637c-14.913,-23.72 -22.791,-51.136 -22.779,-79.287c0.033,-82.142 66.867,-148.971 149.046,-148.971c39.793,0.014 77.199,15.531 105.329,43.692c28.128,28.16 43.609,65.592 43.594,105.4c-0.034,82.149 -66.866,148.983 -148.983,148.984Zm81.721,-111.581c-4.479,-2.242 -26.499,-13.075 -30.604,-14.571c-4.105,-1.495 -7.091,-2.241 -10.077,2.241c-2.986,4.483 -11.569,14.572 -14.182,17.562c-2.612,2.988 -5.225,3.364 -9.703,1.12c-4.479,-2.241 -18.91,-6.97 -36.017,-22.23c-13.314,-11.876 -22.304,-26.542 -24.916,-31.026c-2.612,-4.484 -0.279,-6.908 1.963,-9.14c2.016,-2.007 4.48,-5.232 6.719,-7.847c2.24,-2.615 2.986,-4.484 4.479,-7.472c1.493,-2.99 0.747,-5.604 -0.374,-7.846c-1.119,-2.241 -10.077,-24.288 -13.809,-33.256c-3.635,-8.733 -7.327,-7.55 -10.077,-7.688c-2.609,-0.13 -5.598,-0.158 -8.583,-0.158c-2.986,0 -7.839,1.121 -11.944,5.604c-4.105,4.484 -15.675,15.32 -15.675,37.364c0,22.046 16.048,43.342 18.287,46.332c2.24,2.99 31.582,48.227 76.511,67.627c10.685,4.615 19.028,7.371 25.533,9.434c10.728,3.41 20.492,2.929 28.209,1.775c8.605,-1.285 26.499,-10.833 30.231,-21.295c3.732,-10.464 3.732,-19.431 2.612,-21.298c-1.119,-1.869 -4.105,-2.99 -8.583,-5.232Z" />
+            </svg>
+        </a>
+    </li>
+    <li>
+        <a target="_blank" rel="noopener noreferrer" aria-label="share Word2vec on telegram"
+            href="https://telegram.me/share/url?text=Word2vec&amp;url=https%3a%2f%2fexample.org%2fposts%2fword2vec%2f">
+            <svg version="1.1" xml:space="preserve" viewBox="2 2 28 28" height="30px" width="30px" fill="currentColor">
+                <path
+                    d="M26.49,29.86H5.5a3.37,3.37,0,0,1-2.47-1,3.35,3.35,0,0,1-1-2.47V5.48A3.36,3.36,0,0,1,3,3,3.37,3.37,0,0,1,5.5,2h21A3.38,3.38,0,0,1,29,3a3.36,3.36,0,0,1,1,2.46V26.37a3.35,3.35,0,0,1-1,2.47A3.38,3.38,0,0,1,26.49,29.86Zm-5.38-6.71a.79.79,0,0,0,.85-.66L24.73,9.24a.55.55,0,0,0-.18-.46.62.62,0,0,0-.41-.17q-.08,0-16.53,6.11a.59.59,0,0,0-.41.59.57.57,0,0,0,.43.52l4,1.24,1.61,4.83a.62.62,0,0,0,.63.43.56.56,0,0,0,.4-.17L16.54,20l4.09,3A.9.9,0,0,0,21.11,23.15ZM13.8,20.71l-1.21-4q8.72-5.55,8.78-5.55c.15,0,.23,0,.23.16a.18.18,0,0,1,0,.06s-2.51,2.3-7.52,6.8Z" />
+            </svg>
+        </a>
+    </li>
+    <li>
+        <a target="_blank" rel="noopener noreferrer" aria-label="share Word2vec on ycombinator"
+            href="https://news.ycombinator.com/submitlink?t=Word2vec&u=https%3a%2f%2fexample.org%2fposts%2fword2vec%2f">
+            <svg version="1.1" xml:space="preserve" width="30px" height="30px" viewBox="0 0 512 512" fill="currentColor"
+                xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape">
+                <path
+                    d="M449.446 0C483.971 0 512 28.03 512 62.554L512 449.446C512 483.97 483.97 512 449.446 512L62.554 512C28.03 512 0 483.97 0 449.446L0 62.554C0 28.03 28.029 0 62.554 0L449.446 0ZM183.8767 87.9921H121.8427L230.6673 292.4508V424.0079H281.3328V292.4508L390.1575 87.9921H328.1233L256 238.2489z" />
+            </svg>
+        </a>
+    </li>
+</ul>
+
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+    <span>&copy; 2024 <a href="https://example.org/">Sasmit&#39;s Blog</a></span>
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        if (document.body.className.includes("dark")) {
+            document.body.classList.remove('dark');
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            document.body.classList.add('dark');
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'copied!';
+            setTimeout(() => {
+                copybutton.innerHTML = 'copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+</body>
+
+</html>
+
+
+
+
+
+
