@@ -6,8 +6,17 @@
     <description>Recent content on Sasmit&#39;s Blog</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Thu, 11 Apr 2024 22:54:10 +0530</lastBuildDate>
+    <lastBuildDate>Fri, 12 Apr 2024 02:49:45 +0530</lastBuildDate>
     <atom:link href="https://example.org/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Generative Adversarial Networks</title>
+      <link>https://example.org/posts/gans/</link>
+      <pubDate>Fri, 12 Apr 2024 02:49:45 +0530</pubDate>
+      <guid>https://example.org/posts/gans/</guid>
+      <description>Introduction The main idea: To train generators using really good classifiers.
+Intuitive Explanation Imagine a counterfeiter tasked with creating fake paintings and a detective tasked with discerning fake from real paintings. Both of them are thrown in a game where they have to out compete each other. Through this, both of them will get have to get better in the methods they use to win the game.
+Mathematical Explanation There are two models: A generative model $G$ that tries to capture the data distribution and a discriminative model $D$ that estimates the probability of a particular sample came from the training data.</description>
+    </item>
     <item>
       <title>Word2vec</title>
       <link>https://example.org/posts/word2vec/</link>
