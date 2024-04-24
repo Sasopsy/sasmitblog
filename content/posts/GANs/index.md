@@ -147,5 +147,8 @@ Therefore, from the reformulation in result 1 we get,
 $$C(G)=\log\frac{1}{2}+\log\frac{1}{2}=-\log4$$
 
 # References
-1. [Original GAN paper](https://arxiv.org/pdf/1406.2661.pdf)
-3. [Lilian Weng's blog](https://lilianweng.github.io/posts/2017-08-20-gan/#:~:text=The%20loss%20function%20of%20the,a%20much%20smoother%20value%20space.)
+(1) Ian Goodfellow et al. [“Generative adversarial nets.”](https://arxiv.org/pdf/1406.2661.pdf) NIPS, 2014.
+
+(2) Alec Radford et al. ["UNSUPERVISED REPRESENTATION LEARNING WITH DEEP CONVOLUTIONAL GENERATIVE ADVERSARIAL NETWORKS."](https://arxiv.org/pdf/1511.06434.pdf) ICLR 2016
+
+(3) Lilian Weng. (2017) ["From GAN to WGAN"](https://lilianweng.github.io/posts/2017-08-20-gan/#:~:text=The%20loss%20function%20of%20the,a%20much%20smoother%20value%20space.)

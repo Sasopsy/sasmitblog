@@ -170,8 +170,9 @@ where, \(\mathbb{E}_{q_\phi(\mathbf{z}|\mathbf{x})}\left[p_\theta(\mathbf{x}|\ma
 # Implementation
 You can find an implementation of VAEs (with $\mathcal{N}(1,2)$ prior) trained on various loss functions in this [repository](https://github.com/Sasopsy/SAiDL-2024-Assignment/tree/master/VAEs). The derivation of the KL-divergence with $\mathcal{N}(1,2)$ as prior and various findings using different VAE configurations can be found in this [report](https://github.com/Sasopsy/SAiDL-2024-Assignment/blob/master/VAEs/report/report.pdf).
 
-
 # References
-- [Umar Jamil's VAE Video](https://www.youtube.com/watch?v=iwEzwTTalbg&t=953s)
-- [Kapil Sachdeva's Reparametrisation Trick Video](https://www.youtube.com/watch?v=nKM9875PVtU)
-- [Auto-encoding Variational Bayes](https://arxiv.org/abs/1312.6114)
+(1) Umar Jamil. (June 2023). ["Variational Autoencoder - Model, ELBO, loss function and maths explained easily!"](https://www.youtube.com/watch?v=iwEzwTTalbg&t=953s)
+
+(2) Kapil Sachdeva. (Jan 2022). ["Reparameterization Trick - WHY & BUILDING BLOCKS EXPLAINED!"](https://www.youtube.com/watch?v=nKM9875PVtU)
+
+(3) Diederik P. Kingma et al. (Dec 2022). ["Auto-encoding Variational Bayes"](https://arxiv.org/abs/1312.6114)
