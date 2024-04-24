@@ -131,19 +131,13 @@ $$
 Maximising eq $(8)$ is equivalent to minimising:
 $$
 \mathbb{E}_{q(\mathbf{x}_{0:T})}
-\left[ \log \frac{q(\mathbf{x}_{1:T}|\mathbf{x}_0)}{p_\theta(\mathbf{x}_{0:T})}  \right] = \mathcal{L}_{\text{VLB}}\tag{8}
+\left[ \log \frac{q(\mathbf{x}_{1:T}|\mathbf{x}_0)}{p_\theta(\mathbf{x}_{0:T})}  \right] = \mathcal{L}_{\text{VLB}}\tag{9}
 $$
 ## Simplifying the Likelihood
 So taking the \(\mathcal{L}_{\text{VLB}}\),
-$$
-\begin{align}
-&= \mathbb{E}_{q} \left[ \log \frac{q(\mathbf{x}_T | \mathbf{x}_0)}{p_\theta(\mathbf{x}_T)} + \sum_{t=2}^{T} \log \frac{q(\mathbf{x}_{t-1} | \mathbf{x}_t, \mathbf{x}_0)}{p_\theta(\mathbf{x}_{t-1} | \mathbf{x}_t)} - \log p_\theta(\mathbf{x}_0 | \mathbf{x}_1) \right] \\
-&= \mathbb{E}_{q} \left[ D_{KL}(q(\mathbf{x}_T | \mathbf{x}_0) \parallel p_\theta(\mathbf{x}_T))  + \sum_{t=2}^{T}  D_{KL}(q(\mathbf{x}_{t-1} | \mathbf{x}_t, \mathbf{x}_0) \parallel p_\theta(\mathbf{x}_{t-1} | \mathbf{x}_t)) - \log p_\theta(\mathbf{x}_0 | \mathbf{x}_1) \right]
-\end{align}
-$$
-$$\begin{align}
-\mathcal{L}_{\text{VLB}} &= \mathbb{E}_{q(\mathbf{x}_{0:T})} \left[ \log \frac{q(\mathbf{x}_{1:T} | \mathbf{x}_0)}{p_\theta(\mathbf{x}_{0:T})} \right] \\
-\end{align}$$
+$$\begin{aligned}
+\mathcal{L}_{\text{VLB}} &= \mathbb{E}_{q(\mathbf{x}_{0:T})} \left[ \log \frac{q(\mathbf{x}_{1:T} | \mathbf{x}_0)}{p_\theta(\mathbf{x}_{0:T})} \right] 
+\end{aligned}$$
 So expanding using $(6)$ an $(2)$ and taking \(q=q(\mathbf{x}_{0:T}) \)
 $$\begin{aligned}
 &\mathbb{E}_{q} \left[ \log \frac{\prod_{t=1}^{T} q(\mathbf{x}_t | \mathbf{x}_{t-1})}{p_\theta(\mathbf{x}_T) \prod_{t=1}^{T} p_\theta(\mathbf{x}_{t-1} | \mathbf{x}_t)} \right]\\
@@ -182,7 +176,7 @@ This is a tractable expression as we have the reverse process being conditioned 
 
 Using Bayes theorem, we can write this as:
 $$q(\mathbf{x}_{t-1} | \mathbf{x}_t, \mathbf{x}_0)=\frac{q(\mathbf{x}_{t}|\mathbf{x}_{t-1},\mathbf{x}_{0})q(\mathbf{x}_{t-1}|\mathbf{x}_{0})}{q(\mathbf{x}_{t}|\mathbf{x}_{0})}$$
-For our forward process, \(q(\mathbf{x}_{t}|\mathbf{x}_{t-1},\mathbf{x}_{0})\) is a Markov chain, hence, \(q(\mathbf{x}_{t}|\mathbf{x}_{t-1},\mathbf{x}_{0})=q(\mathbf{x}_{t}|\mathbf{x}_{t-1})\). So our given pdfs can easily be written expressions we already have. \(q(\mathbf{x}_{t}|\mathbf{x}_{0})\) and \((\mathbf{x}_{t-1}|\mathbf{x}_{0})\)  is equation $(5)$.
+For our forward process, \(q(\mathbf{x}_{t}|\mathbf{x}_{t-1},\mathbf{x}_{0})\) is a Markov chain, hence, \(q(\mathbf{x}_{t}|\mathbf{x}_{t-1},\mathbf{x}_{0})=q(\mathbf{x}_{t}|\mathbf{x}_{t-1})\). So our given pdf can easily be written from xexpressions we already have. \(q(\mathbf{x}_{t}|\mathbf{x}_{0})\) and \((\mathbf{x}_{t-1}|\mathbf{x}_{0})\)  is equation $(5)$.
 $$q(\mathbf{x}_{t-1} | \mathbf{x}_t, \mathbf{x}_0)=\frac{\mathcal{N}(\mathbf{x}_{t}|\sqrt{\alpha_t}\mathbf{x}_{t-1},(1-\alpha_t)\mathbf{I}) \mathcal{N}(\mathbf{x}_{t-1}|\sqrt{\bar{\alpha}_{t-1}}\mathbf{x}_{0},(1-\bar{\alpha}_{t-1})\mathbf{I})}{\mathcal{N}(\mathbf{x}_{t}|\sqrt{\bar{\alpha}_{t}}\mathbf{x}_{0},(1-\bar{\alpha}_{t})\mathbf{I})}$$
 **Our goal is to find a gaussian pdf** with mean a function of \(\mathbf{x}_t\) and \( \mathbf{x}_0 \) (during training we'll have access to both values). So expanding the above and take only the exponential terms, we get
 $$\exp\left(-\frac{1}{2}\left[\frac{(\mathbf{x}_t - \sqrt{\alpha_t}\mathbf{x}_{t-1})^2}{1-\alpha_t} + \frac{(\mathbf{x}_{t-1} - \sqrt{\bar{\alpha}_{t-1}}\mathbf{x}_0)^2}{1-\bar{\alpha}_{t-1}} - \frac{(\mathbf{x}_t - \sqrt{\bar{\alpha}_t}\mathbf{x}_0)^2}{1-\bar{\alpha}_t}\right]\right)
